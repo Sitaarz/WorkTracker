@@ -1,0 +1,6 @@
+@WorkTracker.API_HostAddress = http://localhost:5088
+
+GET {{WorkTracker.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
