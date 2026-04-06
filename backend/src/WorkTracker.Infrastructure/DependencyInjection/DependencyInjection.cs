@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using WorkTracker.Infrastructure.Persistence;
 
-namespace WorkTracker.Infrastructure;
+namespace WorkTracker.Infrastructure.DependencyInjection;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
