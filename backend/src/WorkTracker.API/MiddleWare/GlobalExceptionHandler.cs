@@ -5,11 +5,20 @@ namespace WorkTracker.API.MiddleWare;
 
 public sealed class GlobalExceptionHandler : IExceptionHandler
 {
+    private readonly ILogger<GlobalExceptionHandler> _logger;
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    {
+        _logger = logger;
+    }
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
+        _logger.LogError(exception, "Unhandled exception for request {Method} {Path}",
+            httpContext.Request.Method,
+            httpContext.Request.Path);
+            
         var statusCode = exception switch
         {
             KeyNotFoundException => StatusCodes.Status404NotFound,
@@ -26,8 +35,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         };
 
         httpContext.Response.StatusCode = problem.Status.Value;
-
         await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+
         return true;
     }
 }
