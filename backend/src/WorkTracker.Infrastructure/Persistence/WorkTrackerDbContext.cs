@@ -8,6 +8,7 @@ public class WorkTrackerDbContext: DbContext
     {
     }
 
+    DbSet<Entities.User> Users => Set<Entities.User>();
     // Define DbSets for your entities here
     // e.g., public DbSet<MyEntity> MyEntities { get; set; }
 }
