@@ -49,11 +49,36 @@ namespace WorkTracker.API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login()
+        public async Task<IActionResult> Login([FromBody] LogInUserCommand request)
         {
-            // todo: Implementation for user login
-            return Ok();
-        }
+            var validationResult = new LoginUserCommandValidator().Validate(request);
+            if (!validationResult.IsValid)
+            {
+                var errors = validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray());
+                return ValidationProblem(new ValidationProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Validation Failed",
+                    Detail = "One or more validation errors occurred.",
+                    Errors = errors
+                });
+            }
 
+            var result = await _loginUserHandler.HandleAsync(request);
+            if (!result.IsSuccess)
+            {
+                return Problem(
+                    title: "Login Failed",
+                    detail: result.ErrorMessage,
+                    statusCode: StatusCodes.Status401Unauthorized
+                );
+            }
+
+            return Ok(result.Value);
+        }
     }
 }
