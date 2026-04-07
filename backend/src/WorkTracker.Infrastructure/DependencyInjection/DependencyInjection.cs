@@ -1,9 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
+using WorkTracker.Application.Abstractions.Authentication;
+using WorkTracker.Infrastructure.Authentication;
 using WorkTracker.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Identity;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Infrastructure.Persistence.Repositories;
 
 namespace WorkTracker.Infrastructure.DependencyInjection;
 public static class DependencyInjection
@@ -12,9 +13,9 @@ public static class DependencyInjection
     {
         string connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         services.AddDbContext<WorkTrackerDbContext>(Options => Options.UseSqlite(connectionString));
-        services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-        // Register infrastructure services here
-        // e.g., services.AddScoped<IMyRepository, MyRepository>();
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddScoped<IJwtGenerator, JwtGenerator>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }
