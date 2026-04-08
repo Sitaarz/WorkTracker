@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WorkTracker.Application.Abstractions.Authentication;
+using WorkTracker.Application.Abstractions.Persistence;
 using WorkTracker.Infrastructure.Authentication;
 using WorkTracker.Infrastructure.Persistence;
 using WorkTracker.Infrastructure.Persistence.Repositories;
@@ -44,6 +45,7 @@ public static class DependencyInjection
         services.AddAuthorization();
         services.AddScoped<IJwtGenerator, JwtGenerator>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITaskRepository, TaskRepository>();
 
         return services;
     }
