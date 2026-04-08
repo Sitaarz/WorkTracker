@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using WorkTracker.Application.Abstractions.Persistence;
 using WorkTracker.Infrastructure.Entities;
 
@@ -21,5 +22,11 @@ public class TaskRepository : ITaskRepository
 
         _dbContext.TaskItems.Add(taskItem);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<TaskItem?> GetTaskByIdAsync(Guid taskId)
+    {
+        return await _dbContext.TaskItems
+            .FirstOrDefaultAsync(task => task.Id == taskId);
     }
 }

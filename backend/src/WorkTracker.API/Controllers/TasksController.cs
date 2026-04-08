@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkTracker.Application.Tasks.Create;
+using WorkTracker.Application.Tasks.Get.Single;
 
 namespace WorkTracker.API.Controllers;
 
@@ -11,11 +12,13 @@ namespace WorkTracker.API.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly CreateTaskHandler _createTaskHandler;
+    private readonly GetTaskCommandHandler _getTaskHandler;
     private readonly ILogger<TasksController> _logger;
 
-    public TasksController(CreateTaskHandler createTaskHandler, ILogger<TasksController> logger)
+    public TasksController(CreateTaskHandler createTaskHandler, GetTaskCommandHandler getTaskHandler, ILogger<TasksController> logger)
     {
         _createTaskHandler = createTaskHandler;
+        _getTaskHandler = getTaskHandler;
         _logger = logger;
     }
 
@@ -63,5 +66,33 @@ public class TasksController : ControllerBase
         }
 
         return StatusCode(StatusCodes.Status201Created, result.Value);
+    }
+
+    [HttpGet("{taskId}")]
+    public async Task<IActionResult> GetById([FromRoute] GetTaskCommand command)
+    {
+        _logger.LogInformation("Received request to retrieve task with ID {TaskId} using user {UserId}", command.TaskId, User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var result = await _getTaskHandler.HandleAsync(command);
+
+        if (!result.IsSuccess)
+        {
+            _logger.LogWarning("Task retrieval failed for TaskId {TaskId}. Error: {ErrorMessage}", command.TaskId, result.ErrorMessage);
+            return Problem(
+                title: "Task retrieval failed",
+                detail: result.ErrorMessage,
+                statusCode: StatusCodes.Status404NotFound);
+        }
+
+        var usrIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
+        if (result?.Value?.OwnerId.ToString() != usrIdClaim)
+        {
+            _logger.LogWarning("Unauthorized access attempt to TaskId {TaskId} by UserId {UserId}", command.TaskId, usrIdClaim);
+            return Problem(
+                title: "Unauthorized",
+                detail: "You do not have permission to access this task.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        return Ok(result.Value);
     }
 }

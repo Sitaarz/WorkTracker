@@ -5,6 +5,7 @@ using WorkTracker.Infrastructure.Entities;
 using WorkTracker.Application.Authentication.Register;
 using WorkTracker.Application.Authentication.Login;
 using WorkTracker.Application.Tasks.Create;
+using WorkTracker.Application.Tasks.Get.Single;
 
 namespace WorkTracker.Application.DependencyInjection;
 
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<RegisterUserHandler>();
         services.AddScoped<LogInUserHandler>();
         services.AddScoped<CreateTaskHandler>();
+        services.AddScoped<GetTaskCommandHandler>();
 
         return services;
     }

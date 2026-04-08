@@ -41,6 +41,22 @@ public static class DependencyInjection
                     RoleClaimType = ClaimTypes.Role,
                     ClockSkew = TimeSpan.Zero
                 };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = context =>
+                        {
+                            var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                            var email = context.Principal?.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
+
+                            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(email))
+                            {
+                                context.Fail("Required claims are missing.");
+                            }
+
+                            return Task.CompletedTask;
+                        }
+                    };
             });
         services.AddAuthorization();
         services.AddScoped<IJwtGenerator, JwtGenerator>();
