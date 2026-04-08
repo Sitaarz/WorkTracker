@@ -21,9 +21,10 @@ public class JwtGenerator : IJwtGenerator
     {
         List<Claim> claims = [
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Name),
-            new(ClaimTypes.Email, user.Email),
+            new(JwtRegisteredClaimNames.Name, user.Name),
+            new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(ClaimTypes.Role, user.Role)
         ];
 
         var signingCredentials = new SigningCredentials(

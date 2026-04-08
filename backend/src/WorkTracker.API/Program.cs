@@ -35,6 +35,9 @@ if (app.Environment.IsDevelopment())
 // Redirect http to https
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.MapHealthChecks("/health").WithName("HealthCheck");

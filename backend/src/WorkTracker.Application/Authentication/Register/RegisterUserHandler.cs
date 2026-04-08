@@ -33,6 +33,7 @@ public class RegisterUserHandler
             Id = Guid.NewGuid(),
             Name = command.Name.Trim(),
             Email = cleanedEmail,
+            Role = UserRoles.User,
         };
 
         var passwordHash = _passwordHasher.HashPassword(user, command.Password);
@@ -46,6 +47,7 @@ public class RegisterUserHandler
             user.Id,
             user.Name,
             user.Email,
+            user.Role,
             token));
     }
 }

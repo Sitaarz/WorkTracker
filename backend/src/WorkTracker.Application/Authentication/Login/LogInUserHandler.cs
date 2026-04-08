@@ -33,6 +33,7 @@ public class LogInUserHandler
             user.Id,
             user.Name,
             user.Email,
+            user.Role,
             token));
     }
 }
