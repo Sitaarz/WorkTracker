@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkTracker.Application.Tasks;
 using WorkTracker.Application.Tasks.Create;
+using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
 
 namespace WorkTracker.API.Controllers;
@@ -11,14 +13,12 @@ namespace WorkTracker.API.Controllers;
 [Authorize]
 public class TasksController : ControllerBase
 {
-    private readonly CreateTaskHandler _createTaskHandler;
-    private readonly GetTaskCommandHandler _getTaskHandler;
+    private readonly TaskCommandHandler _taskCommandHandler;
     private readonly ILogger<TasksController> _logger;
 
-    public TasksController(CreateTaskHandler createTaskHandler, GetTaskCommandHandler getTaskHandler, ILogger<TasksController> logger)
+    public TasksController(TaskCommandHandler taskCommandHandler, ILogger<TasksController> logger)
     {
-        _createTaskHandler = createTaskHandler;
-        _getTaskHandler = getTaskHandler;
+        _taskCommandHandler = taskCommandHandler;
         _logger = logger;
     }
 
@@ -54,7 +54,7 @@ public class TasksController : ControllerBase
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 
-        var result = await _createTaskHandler.HandleAsync(request, userId);
+        var result = await _taskCommandHandler.Handle(request, userId);
         if (!result.IsSuccess)
         {
             _logger.LogWarning("Task creation failed for user {UserId}. Error: {ErrorMessage}", userId, result.ErrorMessage);
@@ -68,11 +68,20 @@ public class TasksController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
+
+        var result = await _taskCommandHandler.Handle(new GetAllUserTasksCommand(Guid.Parse(userIdClaim)));
+        return Ok(result);
+    }
+
     [HttpGet("{taskId}")]
     public async Task<IActionResult> GetById([FromRoute] GetTaskCommand command)
     {
         _logger.LogInformation("Received request to retrieve task with ID {TaskId} using user {UserId}", command.TaskId, User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
-        var result = await _getTaskHandler.HandleAsync(command);
+        var result = await _taskCommandHandler.Handle(command);
 
         if (!result.IsSuccess)
         {

@@ -12,9 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Tasks\Get\" />
-    <Folder Include="Tasks\Get\All\" />
-    <Folder Include="Tasks\Get\Single\" />
+    <Folder Include="Tasks\Update\" />
   </ItemGroup>
 
   <PropertyGroup>
