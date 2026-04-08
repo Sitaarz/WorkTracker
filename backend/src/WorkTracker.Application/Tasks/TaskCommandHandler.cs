@@ -1,8 +1,10 @@
 using WorkTracker.Application.Abstractions.Persistence;
 using WorkTracker.Application.Common;
 using WorkTracker.Application.Tasks.Create;
+using WorkTracker.Application.Tasks.Delete;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
+using WorkTracker.Application.Tasks.Update;
 using WorkTracker.Infrastructure.Entities;
 
 namespace WorkTracker.Application.Tasks;
@@ -78,5 +80,42 @@ public class TaskCommandHandler
         );
 
         return Result<TaskItemDto>.Success(taskItemDto);
+    }
+
+    public async Task<bool> Handle(UpdateTaskCommand command)
+    {
+        var existingTask = await _taskRepository.GetTaskByIdAsync(command.Id);
+        if (existingTask == null)
+        {
+            return false;
+        }
+
+        existingTask.Title = command.Title.Trim();
+        existingTask.Description = command.Description.Trim();
+        existingTask.Status = command.Status.Trim();
+        existingTask.Priority = command.Priority.Trim();
+        existingTask.DueDate = command.DueDate;
+
+        return await _taskRepository.TryUpdateTaskAsync(existingTask);
+    }
+
+    public async Task<Result> Handle(DeleteTaskCommand command)
+    {
+        var taskItem = await _taskRepository.GetTaskByIdAsync(command.TaskId);
+        if (taskItem == null)        {
+            return Result.Failure("Task not found.");
+        }
+        if (taskItem.OwnerId != command.UserId)
+        {
+            return Result.Failure("You do not have permission to delete this task.");
+        }
+
+        var result = await _taskRepository.TryDeleteTaskAsync(command.TaskId);
+        if (!result)
+        {
+            return Result.Failure("Failed to delete task.");
+        }
+
+        return Result.Success();
     }
 }

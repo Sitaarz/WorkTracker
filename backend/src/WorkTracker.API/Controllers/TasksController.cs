@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkTracker.Application.Tasks;
 using WorkTracker.Application.Tasks.Create;
+using WorkTracker.Application.Tasks.Delete;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
+using WorkTracker.Application.Tasks.Update;
 
 namespace WorkTracker.API.Controllers;
 
@@ -103,5 +105,69 @@ public class TasksController : ControllerBase
         }
 
         return Ok(result.Value);
+    }
+
+    [HttpPut("{taskId:guid}")]
+    public async Task<IActionResult> Update([FromRoute] Guid taskId, [FromBody] UpdateTaskCommand updateTaskCommand)
+    {
+        if(taskId != updateTaskCommand.Id)
+        {
+            return Problem(
+                title: "Bad Request",
+                detail: "Task ID in the URL does not match Task ID in the body.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
+
+        if(updateTaskCommand.OwnerId.ToString() != userId)
+        {
+            _logger.LogWarning("Unauthorized update attempt to TaskId {TaskId} by UserId {UserId}", taskId, userId);
+            return Problem(
+                title: "Unauthorized",
+                detail: "You do not have permission to update this task.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+        if (!await _taskCommandHandler.Handle(updateTaskCommand))
+        {
+            _logger.LogWarning("Task update failed for TaskId {TaskId} by UserId {UserId}. Error: {ErrorMessage}", taskId, userId, "Task does not exist or could not be updated.");
+
+            return Problem(
+                title: "Task update failed",
+                detail: "Task does not exist or could not be updated.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        return Ok();
+    }
+
+    [HttpDelete("{taskId:guid}")]
+    public async Task<IActionResult> Delete([FromRoute] Guid taskId)
+    {
+        _logger.LogInformation("Received request to delete task with ID {TaskId} using user {UserId}", taskId, User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
+
+        var existingTaskResult = await _taskCommandHandler.Handle(new DeleteTaskCommand(taskId, Guid.Parse(userId)));
+        if (!existingTaskResult.IsSuccess)
+        {
+            if (existingTaskResult.ErrorMessage == "Task not found.")
+            {
+                _logger.LogWarning("Task with ID {TaskId} not found for deletion by UserId {UserId}", taskId, userId);
+                return Problem(
+                    title: "Task not found",
+                    detail: existingTaskResult.ErrorMessage,
+                    statusCode: StatusCodes.Status404NotFound);
+            }
+
+            if (existingTaskResult.ErrorMessage == "You do not have permission to delete this task.")
+            {
+                _logger.LogWarning("Unauthorized delete attempt to TaskId {TaskId} by UserId {UserId}", taskId, userId);
+                return Problem(
+                    title: "Unauthorized",
+                    detail: existingTaskResult.ErrorMessage,
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+        }
+        return NoContent();
     }
 }
