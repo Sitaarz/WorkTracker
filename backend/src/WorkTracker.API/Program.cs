@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using WorkTracker.Infrastructure.DependencyInjection;
 using WorkTracker.Application.DependencyInjection;
 using WorkTracker.API.MiddleWare;
@@ -13,7 +14,12 @@ builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.AddHealthChecks();
 

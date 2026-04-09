@@ -25,8 +25,8 @@ public class TaskCommandHandler
             Id = Guid.NewGuid(),
             Title = command.Title.Trim(),
             Description = command.Description.Trim(),
-            Status = command.Status.Trim(),
-            Priority = command.Priority.Trim(),
+            Status = command.Status,
+            Priority = command.Priority,
             DueDate = command.DueDate,
             OwnerId = ownerId
         };
@@ -92,8 +92,8 @@ public class TaskCommandHandler
 
         existingTask.Title = command.Title.Trim();
         existingTask.Description = command.Description.Trim();
-        existingTask.Status = command.Status.Trim();
-        existingTask.Priority = command.Priority.Trim();
+        existingTask.Status = command.Status;
+        existingTask.Priority = command.Priority;
         existingTask.DueDate = command.DueDate;
 
         return await _taskRepository.TryUpdateTaskAsync(existingTask);

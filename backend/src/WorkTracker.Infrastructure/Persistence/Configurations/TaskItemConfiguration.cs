@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkTracker.Infrastructure.Entities;
+using TaskPriorityEnum = WorkTracker.Infrastructure.Entities.TaskPriority;
+using TaskStatusEnum = WorkTracker.Infrastructure.Entities.TaskStatus;
 
 namespace WorkTracker.Infrastructure.Persistence.Configurations;
 
@@ -22,10 +25,12 @@ internal sealed class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
 
         builder.Property(taskItem => taskItem.Status)
             .IsRequired()
+            .HasConversion(new EnumToStringConverter<TaskStatusEnum>())
             .HasMaxLength(50);
 
         builder.Property(taskItem => taskItem.Priority)
             .IsRequired()
+            .HasConversion(new EnumToStringConverter<TaskPriorityEnum>())
             .HasMaxLength(50);
 
         builder.Property(taskItem => taskItem.CreatedAt)
