@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WorkTracker.Application.Abstractions.Persistence;
+using WorkTracker.Application.Common;
+using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Infrastructure.Entities;
 
 namespace WorkTracker.Infrastructure.Persistence.Repositories;
@@ -59,5 +61,45 @@ public class TaskRepository : ITaskRepository
         _dbContext.TaskItems.Update(taskItem);
         await _dbContext.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<PageResult<TaskItem>> QueryTasksAsync(GetTaskQuery query)
+    {
+        var queryItems =
+        _dbContext.TaskItems
+        .AsNoTracking()
+        .Where(t=>t.OwnerId == query.OwnerId);
+
+        if (query.Status is not null)
+        {
+            queryItems = queryItems.Where(t=>t.Status == query.Status);
+        }
+
+        if(query.Priority is not null)
+        {
+            queryItems = queryItems.Where(t=>t.Priority == query.Priority);
+        }
+
+        queryItems = SortTasks(queryItems, query);
+
+        var totalCount = await queryItems.CountAsync();
+
+        var items = queryItems
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToList();
+        return new PageResult<TaskItem>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    private IQueryable<TaskItem> SortTasks(IQueryable<TaskItem> queryItems, GetTaskQuery query)
+    {
+        return (query.SortedBy, query.SortDirection) switch
+        {
+            (SortBy.CreatedAt, SortDirection.Asc) => queryItems.OrderBy(t => t.CreatedAt),
+            (SortBy.CreatedAt, SortDirection.Desc) => queryItems.OrderByDescending(t => t.CreatedAt),
+            (SortBy.DueDate, SortDirection.Asc) => queryItems.OrderBy(t => t.DueDate),
+            (SortBy.DueDate, SortDirection.Desc) => queryItems.OrderByDescending(t => t.DueDate),
+            _ => queryItems.OrderBy(t => t.CreatedAt)
+        };
     }
 }

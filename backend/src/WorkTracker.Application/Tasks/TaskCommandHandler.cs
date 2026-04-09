@@ -2,6 +2,7 @@ using WorkTracker.Application.Abstractions.Persistence;
 using WorkTracker.Application.Common;
 using WorkTracker.Application.Tasks.Create;
 using WorkTracker.Application.Tasks.Delete;
+using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
 using WorkTracker.Application.Tasks.Update;
@@ -117,5 +118,32 @@ public class TaskCommandHandler
         }
 
         return Result.Success();
+    }
+
+    public async Task<Result<PageResult<TaskItemDto>>> Handle(GetTaskQuery query)
+    {
+        if(query.Page <= 0 || query.PageSize <= 0)
+        {
+            return Result<PageResult<TaskItemDto>>.Failure("Page and PageSize must be greater than 0.");
+        }
+        var pageResult = await _taskRepository.QueryTasksAsync(query);
+
+        var taskDtos = pageResult.Items.Select(t => new TaskItemDto(
+            t.Id,
+            t.Title,
+            t.Description,
+            t.Status,
+            t.Priority,
+            t.DueDate,
+            t.OwnerId,
+            t.CreatedAt
+        )).ToList();
+
+        return Result<PageResult<TaskItemDto>>.Success(new PageResult<TaskItemDto>(
+            taskDtos,
+            pageResult.TotalCount,
+            pageResult.Page,
+            pageResult.PageSize)
+        );
     }
 }

@@ -5,7 +5,7 @@ public class TaskItem
     public Guid Id { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
-    public TaskStatus Status { get; set; } = TaskStatus.ToDo;
+    public TaskItemStatus Status { get; set; } = TaskItemStatus.ToDo;
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;
     public DateTime? DueDate { get; set; }
     public Guid OwnerId { get; set; }
@@ -14,16 +14,16 @@ public class TaskItem
     public User Owner { get; set; } = null!;
 }
 
-public enum TaskStatus
+public enum TaskItemStatus
 {
-    ToDo,
-    InProgress,
-    Done
+    ToDo = 0,
+    InProgress = 1,
+    Done = 2
 }
 
 public enum TaskPriority
 {
-    Low,
-    Medium,
-    High
+    Low = 0,
+    Medium = 1,
+    High = 2
 }
