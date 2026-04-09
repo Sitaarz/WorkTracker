@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WorkTracker.Application.Abstractions.Authentication;
+using WorkTracker.Application.Abstractions.Persistence;
 using WorkTracker.Infrastructure.Authentication;
 using WorkTracker.Infrastructure.Persistence;
 using WorkTracker.Infrastructure.Persistence.Repositories;
@@ -40,10 +41,27 @@ public static class DependencyInjection
                     RoleClaimType = ClaimTypes.Role,
                     ClockSkew = TimeSpan.Zero
                 };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = context =>
+                        {
+                            var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                            var email = context.Principal?.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
+
+                            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(email))
+                            {
+                                context.Fail("Required claims are missing.");
+                            }
+
+                            return Task.CompletedTask;
+                        }
+                    };
             });
         services.AddAuthorization();
         services.AddScoped<IJwtGenerator, JwtGenerator>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITaskRepository, TaskRepository>();
 
         return services;
     }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WorkTracker.Infrastructure.Entities;
 
 namespace WorkTracker.Infrastructure.Persistence;
 
@@ -8,7 +9,13 @@ public class WorkTrackerDbContext: DbContext
     {
     }
 
-    DbSet<Entities.User> Users => Set<Entities.User>();
-    // Define DbSets for your entities here
-    // e.g., public DbSet<MyEntity> MyEntities { get; set; }
+    public DbSet<User> Users => Set<User>();
+    public DbSet<TaskItem> TaskItems => Set<TaskItem>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(WorkTrackerDbContext).Assembly);
+
+        base.OnModelCreating(modelBuilder);
+    }
 }
