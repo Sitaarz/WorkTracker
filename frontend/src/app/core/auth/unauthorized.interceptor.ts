@@ -1,16 +1,16 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { TokenStorageService } from '../../../features/auth/services/token-storage-service/token-storage-service';
 import { catchError, throwError } from 'rxjs';
+import { AuthStore } from './auth.store';
 
 export const unauthorizedInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
-  const tokenStorage = inject(TokenStorageService);
+  const authStore = inject(AuthStore);
   return next(req).pipe(
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
-        tokenStorage.clearToken();
+        authStore.clear();
 
         const isOnLoginPage = router.url.startsWith('/login');
         if (!isOnLoginPage) {

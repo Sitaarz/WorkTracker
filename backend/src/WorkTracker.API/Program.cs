@@ -14,6 +14,31 @@ builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? Array.Empty<string>();
+
+// Trim and drop empty entries (e.g. from env var placeholders).
+corsOrigins = corsOrigins
+    .Select(o => o.Trim())
+    .Where(o => o.Length > 0)
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+if (corsOrigins.Length > 0)
+{
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AppCors", policy =>
+        {
+            policy
+                .WithOrigins(corsOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        });
+    });
+}
+
 builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
@@ -28,6 +53,15 @@ var app = builder.Build();
 // Global exception handling middleware
 app.UseExceptionHandler();
 
+// Redirect http to https
+app.UseHttpsRedirection();
+
+if (corsOrigins.Length > 0)
+{
+    // Must run before authentication when using cookie credentials from a SPA on another origin.
+    app.UseCors("AppCors");
+}
+
 if (app.Environment.IsDevelopment())
 {
     // Enable OpenAPI/Swagger in development environment
@@ -38,8 +72,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Redirect http to https
-app.UseHttpsRedirection();
+
 
 app.UseAuthentication();
 app.UseAuthorization();

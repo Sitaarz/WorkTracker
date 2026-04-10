@@ -84,10 +84,10 @@ public class TaskRepository : ITaskRepository
 
         var totalCount = await queryItems.CountAsync();
 
-        var items = queryItems
+        var items = await queryItems
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .ToList();
+            .ToListAsync();
         return new PageResult<TaskItem>(items, totalCount, query.Page, query.PageSize);
     }
 

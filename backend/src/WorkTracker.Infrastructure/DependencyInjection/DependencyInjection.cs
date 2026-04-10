@@ -44,6 +44,11 @@ public static class DependencyInjection
 
                     options.Events = new JwtBearerEvents
                     {
+                        OnMessageReceived = context =>
+                        {
+                            context.Token = context.Request.Cookies["access_token"];
+                            return Task.CompletedTask;
+                        },
                         OnTokenValidated = context =>
                         {
                             var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
