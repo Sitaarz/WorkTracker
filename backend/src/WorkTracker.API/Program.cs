@@ -53,8 +53,11 @@ var app = builder.Build();
 // Global exception handling middleware
 app.UseExceptionHandler();
 
-// Redirect http to https
-app.UseHttpsRedirection();
+// Redirect http to https outside development to keep local SPA->API http flow simple.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 if (corsOrigins.Length > 0)
 {

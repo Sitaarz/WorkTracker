@@ -131,7 +131,7 @@ namespace WorkTracker.API.Controllers
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development",
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddHours(1)
             };

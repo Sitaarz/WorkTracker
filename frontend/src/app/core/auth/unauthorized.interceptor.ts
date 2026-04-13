@@ -12,8 +12,8 @@ export const unauthorizedInterceptor: HttpInterceptorFn = (req, next) => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         authStore.clear();
 
-        const isOnLoginPage = router.url.startsWith('/login');
-        if (!isOnLoginPage) {
+        const isOnPublicAuthPage = router.url.startsWith('/login') || router.url.startsWith('/register');
+        if (!isOnPublicAuthPage) {
           router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
         }
       }

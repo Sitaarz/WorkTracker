@@ -5,6 +5,7 @@ import { ApiEndpoints } from '../api/api.endpoints';
 import { environment } from '../../../environments/environment';
 import { CurretUser } from './auth.store';
 import { Router } from '@angular/router';
+import { ProblemDetails } from '../../shared/models/errors';
 
 export interface LoginRequest {
   email: string;
@@ -35,29 +36,17 @@ export class AuthService {
   }
 
   public login(request: LoginRequest) {
-    return this.http.post<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.login, request).subscribe({
-      next: (authResponse) => {
-        this._authStore.setAuthenticated(authResponse.user);
-        this.navigateAfterAuthSuccess();
-      },
-      error: (error) => console.error('Login failed', error)
-    });
+    return this.http.post<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.login, request)
   }
 
   public register(request: RegisterRequest) {
-    return this.http.post<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.register, request).subscribe({
-      next: (authResponse) => {
-        this._authStore.setAuthenticated(authResponse.user);
-        this.navigateAfterAuthSuccess();
-      },
-      error: (error) => console.error('Registration failed', error)
-    });
+    return this.http.post<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.register, request)
   }
 
   public me() {
     return this.http.get<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.me).subscribe({
       next: (authResponse) => this._authStore.setAuthenticated(authResponse.user),
-      error: (error) => {
+      error: (error: ProblemDetails) => {
         console.warn('Fetching current user failed', error);
         this._authStore.clear();
       }
