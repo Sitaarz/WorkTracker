@@ -126,6 +126,20 @@ namespace WorkTracker.API.Controllers
             return Ok(new AuthResponse(new UserResponse(userEmailClaim, userNameClaim, new List<string> { userRoleClaim })));
         }
 
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Append("access_token", string.Empty, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development",
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(-1)
+            });
+
+            return NoContent();
+        }
+
         private CookieOptions BuildAuthCookieOptions()
         {
             return new CookieOptions

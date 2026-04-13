@@ -1,1 +1,144 @@
-<p>tasks-page works!</p>
+<main class="tasks-page">
+  <header class="page-header">
+    <h1>Tasks</h1>
+    <button type="button" class="secondary-btn" (click)="logout()">Log out</button>
+  </header>
+
+  <section class="card">
+    <h2>Add task</h2>
+    <form [formGroup]="createForm" (ngSubmit)="createTask()" class="form-grid" novalidate>
+      <label for="title">Title</label>
+      <input id="title" type="text" formControlName="title" />
+
+      <label for="description">Description</label>
+      <textarea id="description" rows="3" formControlName="description"></textarea>
+
+      <label for="status">Status</label>
+      <select id="status" formControlName="status">
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+
+      <label for="priority">Priority</label>
+      <select id="priority" formControlName="priority">
+        @for (priority of priorities; track priority) {
+          <option [value]="priority">{{ priority }}</option>
+        }
+      </select>
+
+      <label for="dueDate">Due date</label>
+      <input id="dueDate" type="date" formControlName="dueDate" />
+
+      <button type="submit" [disabled]="isSaving()">
+        {{ isSaving() ? 'Saving...' : 'Add task' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Filters</h2>
+    <form [formGroup]="filterForm" class="filters-grid" novalidate>
+      <label for="filterStatus">Status</label>
+      <select id="filterStatus" formControlName="status">
+        <option value="">Any</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+
+      <label for="filterPriority">Priority</label>
+      <select id="filterPriority" formControlName="priority">
+        <option value="">Any</option>
+        @for (priority of priorities; track priority) {
+          <option [value]="priority">{{ priority }}</option>
+        }
+      </select>
+
+      <label for="sortedBy">Sort by</label>
+      <select id="sortedBy" formControlName="sortedBy">
+        @for (sortBy of sortByOptions; track sortBy) {
+          <option [value]="sortBy">{{ sortBy }}</option>
+        }
+      </select>
+
+      <label for="sortDirection">Direction</label>
+      <select id="sortDirection" formControlName="sortDirection">
+        @for (direction of sortDirectionOptions; track direction) {
+          <option [value]="direction">{{ direction }}</option>
+        }
+      </select>
+
+      <label for="pageSize">Page size</label>
+      <input id="pageSize" type="number" min="1" formControlName="pageSize" />
+
+      <div class="actions">
+        <button type="button" (click)="applyFilters()" [disabled]="isLoading()">Apply filter</button>
+        <button type="button" class="secondary-btn" (click)="clearFilters()" [disabled]="isLoading()">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  <section class="card">
+    <h2>Task list</h2>
+
+    @if (isLoading()) {
+      <p>Loading tasks...</p>
+    } @else if (!hasTasks()) {
+      <p>No tasks found.</p>
+    } @else {
+      <ul class="task-list">
+        @for (task of tasks(); track task.id) {
+          <li>
+            @if (activeTaskId() === task.id) {
+              <form class="form-grid compact" [formGroup]="editForm" novalidate>
+                <label>Title</label>
+                <input type="text" formControlName="title" />
+
+                <label>Description</label>
+                <textarea rows="2" formControlName="description"></textarea>
+
+                <label>Status</label>
+                <select formControlName="status">
+                  @for (status of statuses; track status) {
+                    <option [value]="status">{{ status }}</option>
+                  }
+                </select>
+
+                <label>Priority</label>
+                <select formControlName="priority">
+                  @for (priority of priorities; track priority) {
+                    <option [value]="priority">{{ priority }}</option>
+                  }
+                </select>
+
+                <label>Due date</label>
+                <input type="date" formControlName="dueDate" />
+
+                <div class="actions">
+                  <button type="button" (click)="saveEdit(task)" [disabled]="isSaving()">Save</button>
+                  <button type="button" class="secondary-btn" (click)="cancelEdit()" [disabled]="isSaving()">Cancel</button>
+                </div>
+              </form>
+            } @else {
+              <article class="task-item">
+                <h3>{{ task.title }}</h3>
+                <p>{{ task.description }}</p>
+                <p><strong>Status:</strong> {{ task.status }} | <strong>Priority:</strong> {{ task.priority }}</p>
+                <p><strong>Due:</strong> {{ task.dueDate ? (task.dueDate | date: 'mediumDate') : 'N/A' }}</p>
+                <div class="actions">
+                  <button type="button" (click)="startEdit(task)" [disabled]="isSaving()">Edit</button>
+                  <button type="button" class="danger-btn" (click)="deleteTask(task.id)" [disabled]="isSaving()">Delete</button>
+                </div>
+              </article>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</main>

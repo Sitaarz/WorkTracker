@@ -59,6 +59,13 @@ export class AuthService {
   }
 
   public logout() {
-    this._authStore.clear();
+    this.http.post<void>(environment.apiBaseUrl + ApiEndpoints.auth.logout, {}).pipe(
+      catchError((error: ProblemDetails) => {
+        console.warn('Logout request failed', error);
+        return of(undefined);
+      })
+    ).subscribe(() => {
+      this._authStore.clear();
+    });
   }
 }
