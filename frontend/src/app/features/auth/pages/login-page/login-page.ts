@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { ProblemDetails } from '../../../../shared/models/errors';
+import { ToastService } from '../../../../shared/ui/toast.service';
 
 @Component({
   selector: 'app-login-page',
@@ -21,6 +22,7 @@ export class LoginPage {
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly toastService = inject(ToastService);
 
   public readonly isSubmitting = signal(false);
   public readonly errorMessage = signal<string | null>(null);
@@ -51,6 +53,7 @@ export class LoginPage {
       .subscribe({
         next: (response) => {
           this.authStore.setAuthenticated(response.user);
+          this.toastService.showSuccess(`Welcome back, ${response.user.name}!`);
           const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
           this.router.navigateByUrl(returnUrl || '/');
         },
