@@ -43,11 +43,7 @@ public class RegisterUserHandler
 
         var token = _jwtGenerator.GenerateToken(user);
 
-        return Result<AuthResponse>.Success(new AuthResponse(
-            user.Id,
-            user.Name,
-            user.Email,
-            user.Role,
-            token));
+        return Result<AuthResponse>.Success(new AuthResponse(user.Id, user.Name, user.Email, user.Role, token));
+
     }
 }

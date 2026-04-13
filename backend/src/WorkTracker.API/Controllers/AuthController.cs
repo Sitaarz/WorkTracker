@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkTracker.API.Contracts.Auth;
 using WorkTracker.Application.Authentication.Login;
 using WorkTracker.Application.Authentication.Register;
 
@@ -54,7 +55,9 @@ namespace WorkTracker.API.Controllers
                 );
             }
 
-            return Ok(result.Value);
+            Response.Cookies.Append("access_token", result!.Value!.Token, BuildAuthCookieOptions());
+
+            return Ok(new AuthResponse(new UserResponse(result.Value.Email, result.Value.Name, new List<string> { result.Value.Role })));
         }
 
         [HttpPost("login")]
@@ -90,7 +93,10 @@ namespace WorkTracker.API.Controllers
                 );
             }
 
-            return Ok(result.Value);
+
+            Response.Cookies.Append("access_token", result!.Value!.Token, BuildAuthCookieOptions());
+
+            return Ok(new AuthResponse(new UserResponse(result.Value.Email, result.Value.Name, new List<string> { result.Value.Role })));
         }
 
         [Authorize]
@@ -117,8 +123,18 @@ namespace WorkTracker.API.Controllers
                 );
             }
 
-            return Ok(new GetCurrentUserResponse(userId, userNameClaim, userEmailClaim, userRoleClaim));
+            return Ok(new AuthResponse(new UserResponse(userEmailClaim, userNameClaim, new List<string> { userRoleClaim })));
         }
-        private record GetCurrentUserResponse(Guid UserId, string Name, string Email, string Role);
+
+        private CookieOptions BuildAuthCookieOptions()
+        {
+            return new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development",
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddHours(1)
+            };
+        }
     }
 }

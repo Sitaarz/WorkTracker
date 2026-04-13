@@ -29,11 +29,6 @@ public class LogInUserHandler
             return Result<AuthResponse>.Failure("Invalid password");
 
         var token = _jwtGenerator.GenerateToken(user);
-        return Result<AuthResponse>.Success(new AuthResponse(
-            user.Id,
-            user.Name,
-            user.Email,
-            user.Role,
-            token));
+        return Result<AuthResponse>.Success(new AuthResponse(user.Id, user.Name, user.Email, user.Role, token));
     }
 }

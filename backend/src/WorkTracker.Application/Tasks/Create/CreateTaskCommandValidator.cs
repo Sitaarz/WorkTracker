@@ -1,4 +1,6 @@
 using FluentValidation;
+using TaskPriorityEnum = WorkTracker.Infrastructure.Entities.TaskPriority;
+using TaskStatusEnum = WorkTracker.Infrastructure.Entities.TaskItemStatus;
 
 namespace WorkTracker.Application.Tasks.Create;
 
@@ -15,11 +17,11 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
             .MaximumLength(2000).WithMessage("Description must not exceed 2000 characters.");
 
         RuleFor(x => x.Status)
-            .NotEmpty().WithMessage("Status is required.")
-            .MaximumLength(50).WithMessage("Status must not exceed 50 characters.");
+            .IsInEnum()
+            .WithMessage($"Status must be one of: {string.Join(", ", Enum.GetNames<TaskStatusEnum>())}.");
 
         RuleFor(x => x.Priority)
-            .NotEmpty().WithMessage("Priority is required.")
-            .MaximumLength(50).WithMessage("Priority must not exceed 50 characters.");
+            .IsInEnum()
+            .WithMessage($"Priority must be one of: {string.Join(", ", Enum.GetNames<TaskPriorityEnum>())}.");
     }
 }

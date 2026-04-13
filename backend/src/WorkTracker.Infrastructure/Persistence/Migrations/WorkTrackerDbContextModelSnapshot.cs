@@ -56,7 +56,7 @@ namespace WorkTracker.Infrastructure.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("TaskItems");
+                    b.ToTable("TaskItems", (string)null);
                 });
 
             modelBuilder.Entity("WorkTracker.Infrastructure.Entities.User", b =>
@@ -89,7 +89,7 @@ namespace WorkTracker.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("WorkTracker.Infrastructure.Entities.TaskItem", b =>

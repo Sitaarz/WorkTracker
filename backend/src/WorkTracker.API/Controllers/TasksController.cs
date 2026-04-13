@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkTracker.API.Contracts.Tasks;
 using WorkTracker.Application.Tasks;
 using WorkTracker.Application.Tasks.Create;
 using WorkTracker.Application.Tasks.Delete;
+using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
 using WorkTracker.Application.Tasks.Update;
@@ -169,5 +171,34 @@ public class TasksController : ControllerBase
             }
         }
         return NoContent();
+    }
+
+    [HttpGet("filter")]
+    public async Task<IActionResult> GetFiltered([FromQuery] GetTasksRequest request)
+    {
+        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
+
+        var query = new GetTaskQuery(
+            OwnerId: Guid.Parse(userId),
+            Status: request.Status,
+            Priority: request.Priority,
+            SortedBy: request.SortedBy,
+            SortDirection: request.SortDirection,
+            Page: request.Page,
+            PageSize: request.PageSize
+        );
+
+        var result = await _taskCommandHandler.Handle(query);
+
+        if (!result.IsSuccess)
+        {
+            _logger.LogWarning("Failed to retrieve tasks for UserId {UserId} with filters. Error: {ErrorMessage}", userId, result.ErrorMessage);
+            return Problem(
+                title: "Failed to retrieve tasks",
+                detail: result.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        return Ok(result.Value);
     }
 }
