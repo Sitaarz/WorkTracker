@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkTracker.API.Contracts.Auth;
+using WorkTracker.Application.Authentication;
 using WorkTracker.Application.Authentication.Login;
 using WorkTracker.Application.Authentication.Register;
 
@@ -12,13 +13,11 @@ namespace WorkTracker.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly RegisterUserHandler _registerUserHandler;
-        private readonly LogInUserHandler _loginUserHandler;
+        private readonly AuthHandler _authHandler;
         private readonly ILogger<AuthController> _logger;
-        public AuthController(RegisterUserHandler registerUserHandler, LogInUserHandler loginUserHandler, ILogger<AuthController> logger)
+        public AuthController(AuthHandler authHandler, ILogger<AuthController> logger)
         {
-            _registerUserHandler = registerUserHandler;
-            _loginUserHandler = loginUserHandler;
+            _authHandler = authHandler;
             _logger = logger;
         }
 
@@ -44,7 +43,7 @@ namespace WorkTracker.API.Controllers
                 });
             }
 
-            var result = await _registerUserHandler.HandleAsync(request);
+            var result = await _authHandler.RegisterAsync(request);
             if (!result.IsSuccess)
             {
                 _logger.LogWarning("Registration failed for email: {Email}. Error: {ErrorMessage}", request.Email, result.ErrorMessage);
@@ -82,7 +81,7 @@ namespace WorkTracker.API.Controllers
                 });
             }
 
-            var result = await _loginUserHandler.HandleAsync(request);
+            var result = await _authHandler.LoginAsync(request);
             if (!result.IsSuccess)
             {
                 _logger.LogWarning("Login failed for email: {Email}. Error: {ErrorMessage}", request.Email, result.ErrorMessage);
