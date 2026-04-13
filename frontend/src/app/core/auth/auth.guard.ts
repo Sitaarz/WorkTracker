@@ -11,3 +11,14 @@ export const authGuard: CanActivateFn = (route, state) => {
   }
   return true;
 };
+
+export const guestOnlyGuard: CanActivateFn = () => {
+  const authStore = inject(AuthStore);
+  const router = inject(Router);
+
+  if (authStore.isAuthenticated()) {
+    return router.createUrlTree(['/']);
+  }
+
+  return true;
+};
