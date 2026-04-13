@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { CurretUser } from './auth.store';
 import { Router } from '@angular/router';
 import { ProblemDetails } from '../../shared/models/errors';
+import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 
 export interface LoginRequest {
   email: string;
@@ -43,14 +44,18 @@ export class AuthService {
     return this.http.post<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.register, request)
   }
 
-  public me() {
-    return this.http.get<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.me).subscribe({
-      next: (authResponse) => this._authStore.setAuthenticated(authResponse.user),
-      error: (error: ProblemDetails) => {
-        console.warn('Fetching current user failed', error);
-        this._authStore.clear();
-      }
-    });
+  public me(): Promise<void> {
+    return firstValueFrom(
+      this.http.get<AuthResponse>(environment.apiBaseUrl + ApiEndpoints.auth.me).pipe(
+        tap((authResponse) => this._authStore.setAuthenticated(authResponse.user)),
+        map(() => undefined),
+        catchError((error: ProblemDetails) => {
+          console.warn('Fetching current user failed', error);
+          this._authStore.clear();
+          return of(undefined);
+        })
+      )
+    );
   }
 
   public logout() {
