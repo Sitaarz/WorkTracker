@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkTracker.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using WorkTracker.Infrastructure.Persistence;
 namespace WorkTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(WorkTrackerDbContext))]
-    partial class WorkTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260415132008_ChangeNamespaces")]
+    partial class ChangeNamespaces
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
