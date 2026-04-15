@@ -4,7 +4,7 @@ using WorkTracker.Application.Authentication.Common;
 using WorkTracker.Application.Authentication.Login;
 using WorkTracker.Application.Authentication.Register;
 using WorkTracker.Application.Common;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Application.Authentication;
 

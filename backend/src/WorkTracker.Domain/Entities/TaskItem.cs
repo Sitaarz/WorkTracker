@@ -1,4 +1,4 @@
-namespace WorkTracker.Infrastructure.Entities;
+namespace WorkTracker.Domain.Entities;
 
 public class TaskItem
 {

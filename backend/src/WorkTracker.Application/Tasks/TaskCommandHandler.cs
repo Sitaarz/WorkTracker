@@ -6,7 +6,7 @@ using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
 using WorkTracker.Application.Tasks.Update;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Application.Tasks;
 

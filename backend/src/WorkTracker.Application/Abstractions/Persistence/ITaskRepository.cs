@@ -1,6 +1,6 @@
 using WorkTracker.Application.Common;
 using WorkTracker.Application.Tasks.Get;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Application.Abstractions.Persistence;
 public interface ITaskRepository

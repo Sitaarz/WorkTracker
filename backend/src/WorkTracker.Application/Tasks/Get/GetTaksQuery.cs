@@ -1,4 +1,4 @@
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Application.Tasks.Get;
 

@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Identity;
 using WorkTracker.Application.Authentication;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 using WorkTracker.Application.Tasks;
 
 namespace WorkTracker.Application.DependencyInjection;
