@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using WorkTracker.Infrastructure.Entities;
-using TaskPriorityEnum = WorkTracker.Infrastructure.Entities.TaskPriority;
-using TaskStatusEnum = WorkTracker.Infrastructure.Entities.TaskItemStatus;
+using WorkTracker.Domain.Entities;
+using TaskPriorityEnum = WorkTracker.Domain.Entities.TaskPriority;
+using TaskStatusEnum = WorkTracker.Domain.Entities.TaskItemStatus;
 
 namespace WorkTracker.Infrastructure.Persistence.Configurations;
 

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkTracker.Application.Abstractions.Persistence;
 using WorkTracker.Application.Common;
 using WorkTracker.Application.Tasks.Get;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Infrastructure.Persistence.Repositories;
 

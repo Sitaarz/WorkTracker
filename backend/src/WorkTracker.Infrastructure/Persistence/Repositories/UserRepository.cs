@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WorkTracker.Application.Abstractions.Authentication;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Infrastructure.Persistence.Repositories;
 
