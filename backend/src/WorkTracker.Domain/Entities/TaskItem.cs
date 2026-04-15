@@ -12,6 +12,27 @@ public class TaskItem
     public DateTime CreatedAt { get; set; }
 
     public User Owner { get; set; } = null!;
+
+    public static TaskItem Create(
+        string title,
+        string description,
+        TaskItemStatus status,
+        TaskPriority priority,
+        DateTime? dueDate,
+        Guid ownerId)
+    {
+        return new TaskItem
+        {
+            Id = Guid.NewGuid(),
+            Title = title.Trim(),
+            Description = description.Trim(),
+            Status = status,
+            Priority = priority,
+            DueDate = dueDate,
+            OwnerId = ownerId,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
 }
 
 public enum TaskItemStatus

@@ -21,18 +21,15 @@ public class TaskCommandHandler
 
     public async Task<Result<CreateTaskResponse>> Handle(CreateTaskCommand command, Guid ownerId)
     {
-        var taskItem = new TaskItem
-        {
-            Id = Guid.NewGuid(),
-            Title = command.Title.Trim(),
-            Description = command.Description.Trim(),
-            Status = command.Status,
-            Priority = command.Priority,
-            DueDate = command.DueDate,
-            OwnerId = ownerId
-        };
-
+        var taskItem = TaskItem.Create(
+            command.Title,
+            command.Description,
+            command.Status,
+            command.Priority,
+            command.DueDate,
+            ownerId);
         await _taskRepository.CreateTaskAsync(taskItem);
+
 
         return Result<CreateTaskResponse>.Success(new CreateTaskResponse(
             taskItem.Id,
