@@ -99,6 +99,7 @@ public class TasksTests
     {
         // Arrange
         GetAllUserTasksCommand getAllUserTasksCommand = new(Guid.NewGuid());
+        DateTime dueDate = DateTime.UtcNow.AddDays(1);
         _taskRepository.GetAllUserTasksAsync(getAllUserTasksCommand.UserId).Returns(new List<TaskItem>()
         {
             TaskItem.Create(
@@ -106,7 +107,7 @@ public class TasksTests
                 "Description",
                 TaskItemStatus.InProgress,
                 TaskPriority.Medium,
-                DateTime.UtcNow.AddDays(1),
+                dueDate,
                 getAllUserTasksCommand.UserId
             )
         });
@@ -122,7 +123,7 @@ public class TasksTests
         Assert.That(tasks[0].Description, Is.EqualTo("Description"));
         Assert.That(tasks[0].Status, Is.EqualTo(TaskItemStatus.InProgress));
         Assert.That(tasks[0].Priority, Is.EqualTo(TaskPriority.Medium));
-        Assert.That(tasks[0].DueDate, Is.EqualTo(DateTime.UtcNow.AddDays(1)));
+        Assert.That(tasks[0].DueDate, Is.EqualTo(dueDate));
         Assert.That(tasks[0].OwnerId, Is.EqualTo(getAllUserTasksCommand.UserId));
         Assert.That(tasks[0].CreatedAt, Is.GreaterThanOrEqualTo(DateTime.UtcNow.AddSeconds(-1)));
     }
@@ -133,7 +134,7 @@ public class TasksTests
         // Arrange
         GetAllUserTasksCommand getAllUserTasksCommand = new(Guid.NewGuid());
         _taskRepository.GetAllUserTasksAsync(getAllUserTasksCommand.UserId)
-            .Returns(Task.FromException(new Exception("Database error")));
+            .Returns(Task.FromException<IEnumerable<TaskItem>>(new Exception("Database error")));
 
         // Act
         var ex = Assert.ThrowsAsync<Exception>(async () => await _taskCommandHandler.Handle(getAllUserTasksCommand));
@@ -172,13 +173,39 @@ public class TasksTests
         // Arrange
         GetTaskCommand getTaskCommand = new(Guid.NewGuid().ToString());
         _taskRepository.GetTaskByIdAsync(Guid.Parse(getTaskCommand.TaskId))
-            .Returns(Task.FromException(new Exception("Database error")));
+            .Returns(Task.FromException<TaskItem?>(new Exception("Database error")));
 
         // Act
         var ex = Assert.ThrowsAsync<Exception>(async () => await _taskCommandHandler.Handle(getTaskCommand));
 
         // Assert
         Assert.That(ex.Message, Is.EqualTo("Database error"));
+    }
+
+    [Test]
+    public async Task HandleGetTaskCommand_ShouldReturnFailure_WhenTaskNotFound()
+    {
+        // Arrange
+        GetTaskCommand getTaskCommand = new(Guid.NewGuid().ToString());
+        _taskRepository.GetTaskByIdAsync(Guid.Parse(getTaskCommand.TaskId)).ReturnsNull();
+
+        // Act
+        var result = await _taskCommandHandler.Handle(getTaskCommand);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("Task not found."));
+        Assert.That(result.Value, Is.Null);
+    }
+
+    [Test]
+    public void HandleGetTaskCommand_ShouldThrowFormatException_WhenTaskIdIsInvalid()
+    {
+        // Arrange
+        GetTaskCommand getTaskCommand = new("invalid-guid");
+
+        // Act + Assert
+        Assert.ThrowsAsync<FormatException>(async () => await _taskCommandHandler.Handle(getTaskCommand));
     }
 
     [Test]
@@ -245,6 +272,77 @@ public class TasksTests
     }
 
     [Test]
+    public async Task HandleUpdateTaskCommand_ShouldTrimTitleAndDescription()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        UpdateTaskCommand updateTaskCommand = new(
+            Guid.NewGuid(),
+            "  Trimmed Title  ",
+            "  Trimmed Description  ",
+            TaskItemStatus.InProgress,
+            TaskPriority.Medium,
+            DateTime.UtcNow.AddDays(1),
+            ownerId,
+            DateTime.UtcNow
+        );
+        _taskRepository.GetTaskByIdAsync(updateTaskCommand.Id).Returns(
+            TaskItem.Create(
+                "Old title",
+                "Old description",
+                TaskItemStatus.ToDo,
+                TaskPriority.Low,
+                DateTime.UtcNow.AddDays(2),
+                ownerId
+            )
+        );
+        _taskRepository.TryUpdateTaskAsync(Arg.Any<TaskItem>()).Returns(true);
+
+        // Act
+        var result = await _taskCommandHandler.Handle(updateTaskCommand);
+
+        // Assert
+        Assert.That(result, Is.True);
+        await _taskRepository.Received(1).TryUpdateTaskAsync(Arg.Is<TaskItem>(task =>
+            task.Title == "Trimmed Title" &&
+            task.Description == "Trimmed Description"));
+    }
+
+    [Test]
+    public async Task HandleUpdateTaskCommand_ShouldReturnFalse_WhenRepositoryUpdateFails()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        UpdateTaskCommand updateTaskCommand = new(
+            Guid.NewGuid(),
+            "Title",
+            "Description",
+            TaskItemStatus.InProgress,
+            TaskPriority.Medium,
+            DateTime.UtcNow.AddDays(1),
+            ownerId,
+            DateTime.UtcNow
+        );
+        _taskRepository.GetTaskByIdAsync(updateTaskCommand.Id).Returns(
+            TaskItem.Create(
+                "Title",
+                "Description",
+                TaskItemStatus.InProgress,
+                TaskPriority.Medium,
+                DateTime.UtcNow.AddDays(1),
+                ownerId
+            )
+        );
+        _taskRepository.TryUpdateTaskAsync(Arg.Any<TaskItem>()).Returns(false);
+
+        // Act
+        var result = await _taskCommandHandler.Handle(updateTaskCommand);
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
     public async Task HandleDeleteTaskCommand_ShouldDeleteTask()
     {
         // Arrange
@@ -296,6 +394,49 @@ public class TasksTests
     }
 
     [Test]
+    public async Task HandleDeleteTaskCommand_ShouldReturnFailure_WhenTaskNotFound()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        DeleteTaskCommand deleteTaskCommand = new(taskId, ownerId);
+        _taskRepository.GetTaskByIdAsync(taskId).ReturnsNull();
+
+        // Act
+        var result = await _taskCommandHandler.Handle(deleteTaskCommand);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("Task not found."));
+        await _taskRepository.DidNotReceive().TryDeleteTaskAsync(taskId);
+    }
+
+    [Test]
+    public async Task HandleDeleteTaskCommand_ShouldReturnFailure_WhenDeleteFails()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        DeleteTaskCommand deleteTaskCommand = new(taskId, ownerId);
+        _taskRepository.GetTaskByIdAsync(taskId).Returns(TaskItem.Create(
+            "Title",
+            "Description",
+            TaskItemStatus.InProgress,
+            TaskPriority.Medium,
+            DateTime.UtcNow.AddDays(1),
+            ownerId
+        ));
+        _taskRepository.TryDeleteTaskAsync(taskId).Returns(false);
+
+        // Act
+        var result = await _taskCommandHandler.Handle(deleteTaskCommand);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("Failed to delete task."));
+    }
+
+    [Test]
     public async Task HandleGetTaskQuery_ShouldReturnPagedTasks()
     {
         // Arrange
@@ -342,5 +483,28 @@ public class TasksTests
         Assert.That(result.ErrorMessage, Is.EqualTo("Page and PageSize must be greater than 0."));
         await _taskRepository.DidNotReceive().QueryTasksAsync(Arg.Any<GetTaskQuery>());
 
+    }
+
+    [Test]
+    public async Task HandleGetTaskQuery_ShouldReturnSuccessWithEmptyItems_WhenRepositoryReturnsEmptyPage()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        GetTaskQuery query = new(ownerId, Page: 1, PageSize: 10);
+        _taskRepository.QueryTasksAsync(query).Returns(new PageResult<TaskItem>(
+            new List<TaskItem>(),
+            0,
+            1,
+            10
+        ));
+
+        // Act
+        var result = await _taskCommandHandler.Handle(query);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value!.Items, Is.Empty);
+        Assert.That(result.Value.TotalCount, Is.EqualTo(0));
     }
 }
