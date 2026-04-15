@@ -5,7 +5,7 @@ using WorkTracker.Application.Abstractions.Authentication;
 using WorkTracker.Application.Authentication;
 using WorkTracker.Application.Authentication.Login;
 using WorkTracker.Application.Authentication.Register;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.UnitTests.Application.Auth;
 
