@@ -28,6 +28,7 @@ public class TaskRepository : ITaskRepository
         {
             _dbContext.TaskItems.Remove(task);
             await _dbContext.SaveChangesAsync();
+            return true;
         }
         return false;
     }
