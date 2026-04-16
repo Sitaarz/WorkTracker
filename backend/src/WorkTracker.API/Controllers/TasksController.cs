@@ -9,6 +9,7 @@ using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
 using WorkTracker.Application.Tasks.Update;
+using WorkTracker.API.Mappers;
 
 namespace WorkTracker.API.Controllers;
 
@@ -27,9 +28,20 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateTaskCommand request)
+    public async Task<IActionResult> Create([FromBody] CreateTaskRequest request)
     {
-        var validationResult = new CreateTaskCommandValidator().Validate(request);
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Authenticated create task request is missing a valid subject claim.");
+
+            return Problem(
+                title: "Unauthorized",
+                detail: "Required user claims were not found.",
+                statusCode: StatusCodes.Status401Unauthorized);
+        }
+        var command = request.ToCommand(userId);
+        var validationResult = new CreateTaskCommandValidator().Validate(command);
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors
@@ -47,18 +59,7 @@ public class TasksController : ControllerBase
             });
         }
 
-        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            _logger.LogWarning("Authenticated create task request is missing a valid subject claim.");
-
-            return Problem(
-                title: "Unauthorized",
-                detail: "Required user claims were not found.",
-                statusCode: StatusCodes.Status401Unauthorized);
-        }
-
-        var result = await _taskCommandHandler.Handle(request, userId);
+        var result = await _taskCommandHandler.Handle(command);
         if (!result.IsSuccess)
         {
             _logger.LogWarning("Task creation failed for user {UserId}. Error: {ErrorMessage}", userId, result.ErrorMessage);

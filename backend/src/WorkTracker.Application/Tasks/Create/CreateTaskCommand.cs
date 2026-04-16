@@ -1,11 +1,11 @@
-using TaskPriorityEnum = WorkTracker.Domain.Entities.TaskPriority;
-using TaskStatusEnum = WorkTracker.Domain.Entities.TaskItemStatus;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Application.Tasks.Create;
 
 public sealed record class CreateTaskCommand(
+    Guid OwnerId,
     string Title,
     string Description,
-    TaskStatusEnum Status,
-    TaskPriorityEnum Priority,
+    TaskItemStatus Status,
+    TaskPriority Priority,
     DateTime? DueDate);
