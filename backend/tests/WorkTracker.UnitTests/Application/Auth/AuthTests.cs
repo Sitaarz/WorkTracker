@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
 using Microsoft.AspNetCore.Identity;
 using NSubstitute;
 using WorkTracker.Application.Abstractions.Authentication;
@@ -213,5 +212,40 @@ public class AuthTests
         Assert.That(result.Value, Is.Null);
 
         await _userRepository.Received(1).GetUserByEmailAsync(email);
+    }
+
+    [Test]
+    public async Task LoginAsync_ShouldNormalizeEmail_BeforeLookup()
+    {
+        // Arrange
+        const string rawEmail = "  Test.Name@Example.COM ";
+        const string normalizedEmail = "test.name@example.com";
+        const string password = "test_password";
+        const string passwordHash = "test-hash";
+        const string jwtToken = "jwt-token";
+        var userId = Guid.NewGuid();
+        var command = new LogInUserCommand(rawEmail, password);
+
+        _userRepository.GetUserByEmailAsync(normalizedEmail).Returns(new User
+        {
+            Id = userId,
+            Name = "Test",
+            Email = normalizedEmail,
+            Role = UserRoles.User,
+            PasswordHash = passwordHash
+        });
+        _passwordHasher.VerifyHashedPassword(Arg.Any<User>(), passwordHash, password)
+            .Returns(PasswordVerificationResult.Success);
+        _jwtGenerator.GenerateToken(Arg.Any<User>()).Returns(jwtToken);
+
+        // Act
+        var result = await _authHandler.LoginAsync(command);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value!.Email, Is.EqualTo(normalizedEmail));
+        await _userRepository.Received(1).GetUserByEmailAsync(normalizedEmail);
+        await _userRepository.DidNotReceive().GetUserByEmailAsync(rawEmail);
     }
 }
