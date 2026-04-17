@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { ProblemDetails } from '../../../../shared/models/errors';
+import { ToastService } from '../../../../shared/ui/toast.service';
 
 const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('password')?.value as string | undefined;
@@ -31,6 +32,7 @@ export class RegisterPage {
   private readonly authService = inject(AuthService);
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
 
   public readonly isSubmitting = signal(false);
   public readonly errorMessage = signal<string | null>(null);
@@ -64,6 +66,7 @@ export class RegisterPage {
       .subscribe({
         next: (response) => {
           this.authStore.setAuthenticated(response.user);
+          this.toastService.showSuccess('Account created successfully.');
           this.router.navigateByUrl('/');
         },
         error: (error: HttpErrorResponse) => {

@@ -17,7 +17,7 @@ namespace WorkTracker.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
 
-            modelBuilder.Entity("WorkTracker.Infrastructure.Entities.TaskItem", b =>
+            modelBuilder.Entity("WorkTracker.Domain.Entities.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -59,7 +59,7 @@ namespace WorkTracker.Infrastructure.Migrations
                     b.ToTable("TaskItems", (string)null);
                 });
 
-            modelBuilder.Entity("WorkTracker.Infrastructure.Entities.User", b =>
+            modelBuilder.Entity("WorkTracker.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -92,9 +92,9 @@ namespace WorkTracker.Infrastructure.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("WorkTracker.Infrastructure.Entities.TaskItem", b =>
+            modelBuilder.Entity("WorkTracker.Domain.Entities.TaskItem", b =>
                 {
-                    b.HasOne("WorkTracker.Infrastructure.Entities.User", "Owner")
+                    b.HasOne("WorkTracker.Domain.Entities.User", "Owner")
                         .WithMany("TaskItems")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -103,7 +103,7 @@ namespace WorkTracker.Infrastructure.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("WorkTracker.Infrastructure.Entities.User", b =>
+            modelBuilder.Entity("WorkTracker.Domain.Entities.User", b =>
                 {
                     b.Navigation("TaskItems");
                 });

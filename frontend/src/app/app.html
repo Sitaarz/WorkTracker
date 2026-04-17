@@ -1,1 +1,7 @@
 <router-outlet />
+
+@if (toastService.currentToast(); as toast) {
+  <div class="toast" [class.toast-success]="toast.type === 'success'">
+    {{ toast.message }}
+  </div>
+}

@@ -6,7 +6,7 @@ using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
 using WorkTracker.Application.Tasks.Update;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.Application.Tasks;
 
@@ -19,20 +19,17 @@ public class TaskCommandHandler
         _taskRepository = taskRepository;
     }
 
-    public async Task<Result<CreateTaskResponse>> Handle(CreateTaskCommand command, Guid ownerId)
+    public async Task<Result<CreateTaskResponse>> Handle(CreateTaskCommand command)
     {
-        var taskItem = new TaskItem
-        {
-            Id = Guid.NewGuid(),
-            Title = command.Title.Trim(),
-            Description = command.Description.Trim(),
-            Status = command.Status,
-            Priority = command.Priority,
-            DueDate = command.DueDate,
-            OwnerId = ownerId
-        };
-
+        var taskItem = TaskItem.Create(
+            command.Title,
+            command.Description,
+            command.Status,
+            command.Priority,
+            command.DueDate,
+            command.OwnerId);
         await _taskRepository.CreateTaskAsync(taskItem);
+
 
         return Result<CreateTaskResponse>.Success(new CreateTaskResponse(
             taskItem.Id,

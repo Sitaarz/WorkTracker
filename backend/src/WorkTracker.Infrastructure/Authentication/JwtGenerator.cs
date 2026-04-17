@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WorkTracker.Application.Abstractions.Authentication;
-using WorkTracker.Infrastructure.Entities;
+using WorkTracker.Domain.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;

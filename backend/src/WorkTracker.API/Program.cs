@@ -85,3 +85,9 @@ app.MapControllers();
 app.MapHealthChecks("/health").WithName("HealthCheck");
 
 app.Run();
+
+
+// This is used by the integration tests to find the program class.
+public partial class Program
+{
+}

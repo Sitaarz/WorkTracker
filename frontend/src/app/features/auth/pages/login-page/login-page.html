@@ -26,7 +26,7 @@
         <p class="form-error">{{ errorMessage() }}</p>
       }
 
-      <button type="submit" [disabled]="isSubmitting()">
+      <button type="submit" [disabled]="isSubmitting() || form.invalid">
         {{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
       </button>
     </form>
