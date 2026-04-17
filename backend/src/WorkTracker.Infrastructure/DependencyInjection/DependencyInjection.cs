@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WorkTracker.Application.Abstractions.Authentication;
 using WorkTracker.Application.Abstractions.Persistence;
@@ -19,16 +20,24 @@ public static class DependencyInjection
     {
         string connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         var jwtSection = configuration.GetSection(JwtOptions.SectionName);
-        var jwtOptions = jwtSection.Get<JwtOptions>() ?? throw new InvalidOperationException("JWT configuration is missing.");
 
-        services.AddDbContext<WorkTrackerDbContext>(Options => Options.UseSqlite(connectionString));
+        services.AddDbContext<WorkTrackerDbContext>(options =>options.UseNpgsql(connectionString));
+
         services.Configure<JwtOptions>(jwtSection);
+
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+            .AddJwtBearer();
+
+        services
+            .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((bearerOptions, jwtAccessor) =>
             {
-                options.MapInboundClaims = false;
-                options.TokenValidationParameters = new TokenValidationParameters
+                var jwtOptions = jwtAccessor.Value
+                    ?? throw new InvalidOperationException("JWT configuration is missing.");
+
+                bearerOptions.MapInboundClaims = false;
+                bearerOptions.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
@@ -42,27 +51,28 @@ public static class DependencyInjection
                     ClockSkew = TimeSpan.Zero
                 };
 
-                    options.Events = new JwtBearerEvents
+                bearerOptions.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
                     {
-                        OnMessageReceived = context =>
-                        {
-                            context.Token = context.Request.Cookies["access_token"];
-                            return Task.CompletedTask;
-                        },
-                        OnTokenValidated = context =>
-                        {
-                            var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-                            var email = context.Principal?.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
+                        context.Token = context.Request.Cookies["access_token"];
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                        var email = context.Principal?.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
 
-                            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(email))
-                            {
-                                context.Fail("Required claims are missing.");
-                            }
-
-                            return Task.CompletedTask;
+                        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(email))
+                        {
+                            context.Fail("Required claims are missing.");
                         }
-                    };
+
+                        return Task.CompletedTask;
+                    }
+                };
             });
+
         services.AddAuthorization();
         services.AddScoped<IJwtGenerator, JwtGenerator>();
         services.AddScoped<IUserRepository, UserRepository>();
