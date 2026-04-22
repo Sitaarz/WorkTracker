@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using WorkTracker.Infrastructure.DependencyInjection;
+using WorkTracker.Infrastructure.Persistence;
 using WorkTracker.Application.DependencyInjection;
 using WorkTracker.API.MiddleWare;
 
@@ -49,6 +51,16 @@ builder.Services
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+// When launched with `--migrate`, apply EF Core migrations and exit without starting the web host.
+// Used by the Kubernetes migration Job to run schema updates as a separate, idempotent step.
+if (args.Contains("--migrate"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<WorkTrackerDbContext>();
+    await db.Database.MigrateAsync();
+    return;
+}
 
 // Global exception handling middleware
 app.UseExceptionHandler();
