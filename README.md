@@ -1,6 +1,6 @@
 # WorkTracer
 ## MVP
-Celem MVP jest zbudowanie prostego systemu do zarządzania zadaniami w postaci tablicy kanban.
+Celem MVP jest zbudowanie prostego systemu do zarządzania zadaniami..
 
 ### Zakres MVP
 - rejestracja i logowanie użytkownika
