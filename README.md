@@ -3,13 +3,14 @@
 Celem MVP jest zbudowanie prostego systemu do zarządzania zadaniami..
 
 ### Zakres MVP
-- rejestracja i logowanie użytkownika
-- autoryzacja JWT
-- tworzenie, edycja, usuwanie zadań
-- oznaczanie statusu zadania
-- filtrowanie listy zadań
-- podstawowe testy jednostkowe
-- deployment
+- rejestracja i logowanie użytkownika [Done]
+- autoryzacja JWT [Done]
+- tworzenie, edycja, usuwanie zadań [Done]
+- oznaczanie statusu zadania [Done]
+- filtrowanie listy zadań [Done]
+- podstawowe testy jednostkowe [Done]
+- testy integracyjne [Done]
+- deployment z użyciem kubernetes [In Progress]
 
 ### Poza MVP
 - przypisywanie zadań innym użytkownikom
