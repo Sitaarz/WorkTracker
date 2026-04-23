@@ -16,6 +16,12 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
     WORKDIR /app
     ENV HTTP_PORTS=8080
+
+    # curl is used by the docker-compose healthcheck; the base image ships neither curl nor wget.
+    RUN apt-get update \
+        && apt-get install -y --no-install-recommends curl \
+        && rm -rf /var/lib/apt/lists/*
+
     USER $APP_UID
 
     COPY --from=build /build/publish/ ./
