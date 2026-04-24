@@ -40,7 +40,7 @@ The project is split into a .NET 10 REST API and an Angular 21 single-page appli
 - Entity Framework Core 10 + Npgsql (PostgreSQL 17)
 - JWT Bearer authentication (`Microsoft.AspNetCore.Authentication.JwtBearer`)
 - FluentValidation
-- NUnit, NSubstitute and `Microsoft.NET.Test.Sdk` for tests
+- NUnit, NSubstitute, Testcontainers (PostgreSQL) and Respawn for tests
 
 **Frontend**
 - Angular 21 (standalone components, lazy-loaded routes)
@@ -59,10 +59,10 @@ The project is split into a .NET 10 REST API and an Angular 21 single-page appli
 WorkTracker/
 ├── backend/
 │   ├── src/
-│   │   ├── WorkTracker.API/            # ASP.NET Core host (controllers, middleware, DI composition)
-│   │   ├── WorkTracker.Application/    # Use cases, commands/queries, validators, DTOs
-│   │   ├── WorkTracker.Domain/         # Entities (User, TaskItem) and enums
-│   │   └── WorkTracker.Infrastructure/ # EF Core DbContext, migrations, auth, persistence
+│   │   ├── WorkTracker.API/            # ASP.NET Core host: controllers, request contracts, mappers, middleware, DI composition
+│   │   ├── WorkTracker.Application/    # Use cases (commands/queries), validators, DTOs, abstractions
+│   │   ├── WorkTracker.Domain/         # Entities (User, TaskItem) and enums (UserRoles, task status/priority)
+│   │   └── WorkTracker.Infrastructure/ # EF Core DbContext, migrations, authentication, persistence
 │   ├── tests/
 │   │   ├── WorkTracker.UnitTests/
 │   │   └── WorkTracker.IntegrationTests/
@@ -70,15 +70,16 @@ WorkTracker/
 │   └── WorkTracker.slnx
 ├── frontend/
 │   ├── src/app/
-│   │   ├── core/         # API client, auth service, guards, interceptors, layout
-│   │   ├── features/     # auth/ and tasks/ feature modules (pages + components)
-│   │   └── shared/       # Reusable UI, models, pipes, directives
+│   │   ├── core/         # HTTP API endpoints and auth layer (service, store, guard, interceptors)
+│   │   ├── features/     # auth/ and tasks/ feature modules (pages, components, feature services)
+│   │   └── shared/       # Shared models and UI utilities (e.g., toast service)
 │   ├── Dockerfile
 │   ├── nginx.conf
 │   └── package.json
 ├── docs/
 │   └── mvp.md            # MVP scope and requirements
 ├── k8s/                  # (reserved) Kubernetes manifests
+├── .github/              # Issue and pull request templates, CI workflows (placeholder)
 ├── docker-compose.yml
 ├── LICENSE
 └── README.md
@@ -122,7 +123,7 @@ When running in `Development`, Swagger UI is available at `/swagger` and the Ope
 
 ### Prerequisites
 
-- [Docker](https://www.docker.com/) and Docker Compose (for the containerized workflow)
+- [Docker](https://www.docker.com/) and Docker Compose (for the containerized workflow, and required by the backend integration tests via Testcontainers)
 - [.NET 10 SDK](https://dotnet.microsoft.com/) (for local backend development)
 - [Node.js 24+](https://nodejs.org/) and npm 11+ (for local frontend development)
 - [PostgreSQL 17](https://www.postgresql.org/) if you want to run the database outside Docker
@@ -201,7 +202,7 @@ cd backend
 dotnet test
 ```
 
-This runs both `WorkTracker.UnitTests` (NUnit + NSubstitute) and `WorkTracker.IntegrationTests` (uses a shared `IntegrationTestFixture` to boot the API in-memory).
+This runs both `WorkTracker.UnitTests` (NUnit + NSubstitute) and `WorkTracker.IntegrationTests`. The integration suite uses a shared `IntegrationTestFixture` that spins up a real PostgreSQL database via [Testcontainers](https://dotnet.testcontainers.org/) (`postgres:16-alpine`), hosts the API through a `WebApplicationFactory`, and resets state between tests with [Respawn](https://github.com/jbogard/Respawn). Docker must be running for the integration tests to pass.
 
 **Frontend**
 
