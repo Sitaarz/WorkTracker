@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: worktracker
+  namespace: worktracker
+  annotations:
+    # Na AKS/EKS/GKE często będzie inna klasa niż "nginx"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: worktracker.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-api
+                port: { number: 80 }
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-api
+                port: { number: 80 }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-web
+                port: { number: 80 }
+  # Dla TLS: tls: [{ hosts: [worktracker.example.com], secretName: worktracker-tls }]
