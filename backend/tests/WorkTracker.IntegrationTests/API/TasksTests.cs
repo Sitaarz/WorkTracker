@@ -3,7 +3,6 @@ using WorkTracker.API.Contracts.Tasks;
 using WorkTracker.Application.Common;
 using WorkTracker.Application.Tasks;
 using WorkTracker.Application.Tasks.Create;
-using WorkTracker.Application.Tasks.Update;
 using WorkTracker.Domain.Entities;
 
 namespace WorkTracker.IntegrationTests.API;
@@ -125,19 +124,17 @@ public class TasksTests : IntegrationTestBase
         var create = await Client.PostApiJsonAsync("/api/v1/Tasks", SampleRequest());
         var created = (await create.Content.ReadApiJsonAsync<CreateTaskResponse>())!;
 
-        var update = new UpdateTaskCommand(
+        var update = new UpdateTaskRequest(
             Id: created.Id,
             Title: "Updated title",
             Description: "Updated description",
             Status: TaskItemStatus.InProgress,
             Priority: TaskPriority.High,
-            DueDate: created.DueDate,
-            OwnerId: created.OwnerId,
-            CreatedAt: created.CreatedAt);
+            DueDate: created.DueDate);
 
         var response = await Client.PutApiJsonAsync($"/api/v1/Tasks/{created.Id}", update);
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
 
         var refreshed = await Client.GetApiFromJsonAsync<TaskItemDto>($"/api/v1/Tasks/{created.Id}");
         Assert.That(refreshed!.Title, Is.EqualTo("Updated title"));
@@ -152,15 +149,13 @@ public class TasksTests : IntegrationTestBase
         var create = await Client.PostApiJsonAsync("/api/v1/Tasks", SampleRequest());
         var created = (await create.Content.ReadApiJsonAsync<CreateTaskResponse>())!;
 
-        var update = new UpdateTaskCommand(
+        var update = new UpdateTaskRequest(
             Id: Guid.NewGuid(),
             Title: "X",
             Description: "X",
             Status: TaskItemStatus.ToDo,
             Priority: TaskPriority.Low,
-            DueDate: null,
-            OwnerId: created.OwnerId,
-            CreatedAt: created.CreatedAt);
+            DueDate: null);
 
         var response = await Client.PutApiJsonAsync($"/api/v1/Tasks/{created.Id}", update);
 
@@ -168,7 +163,7 @@ public class TasksTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task Update_ShouldReturnForbidden_WhenOwnerIdDoesNotMatchCurrentUser()
+    public async Task Update_ShouldReturnForbidden_WhenCallerIsNotOwner()
     {
         await Client.RegisterAsync(UserAEmail, Password);
         var create = await Client.PostApiJsonAsync("/api/v1/Tasks", SampleRequest());
@@ -177,15 +172,13 @@ public class TasksTests : IntegrationTestBase
         using var clientB = CreateUnauthenticatedClient();
         await clientB.RegisterAsync(UserBEmail, Password);
 
-        var update = new UpdateTaskCommand(
+        var update = new UpdateTaskRequest(
             Id: created.Id,
             Title: "Hacked",
             Description: "Nope",
             Status: TaskItemStatus.Done,
             Priority: TaskPriority.High,
-            DueDate: null,
-            OwnerId: created.OwnerId,
-            CreatedAt: created.CreatedAt);
+            DueDate: null);
 
         var response = await clientB.PutApiJsonAsync($"/api/v1/Tasks/{created.Id}", update);
 

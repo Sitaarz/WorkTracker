@@ -8,6 +8,7 @@ using WorkTracker.Application.Tasks.Delete;
 using WorkTracker.Application.Tasks.Get;
 using WorkTracker.Application.Tasks.Get.All;
 using WorkTracker.Application.Tasks.Get.Single;
+using WorkTracker.Application.Common;
 using WorkTracker.Application.Tasks.Update;
 using WorkTracker.API.Mappers;
 
@@ -98,7 +99,7 @@ public class TasksController : ControllerBase
         }
 
         var usrIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
-        if (result?.Value?.OwnerId.ToString() != usrIdClaim)
+        if (result.Value?.OwnerId.ToString() != usrIdClaim)
         {
             _logger.LogWarning("Unauthorized access attempt to TaskId {TaskId} by UserId {UserId}", command.TaskId, usrIdClaim);
             return Problem(
@@ -111,9 +112,9 @@ public class TasksController : ControllerBase
     }
 
     [HttpPut("{taskId:guid}")]
-    public async Task<IActionResult> Update([FromRoute] Guid taskId, [FromBody] UpdateTaskCommand updateTaskCommand)
+    public async Task<IActionResult> Update([FromRoute] Guid taskId, [FromBody] UpdateTaskRequest request)
     {
-        if(taskId != updateTaskCommand.Id)
+        if (taskId != request.Id)
         {
             return Problem(
                 title: "Bad Request",
@@ -121,23 +122,42 @@ public class TasksController : ControllerBase
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value;
-
-        if(updateTaskCommand.OwnerId.ToString() != userId)
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            _logger.LogWarning("Unauthorized update attempt to TaskId {TaskId} by UserId {UserId}", taskId, userId);
+            _logger.LogWarning("Authenticated update task request is missing a valid subject claim.");
+
             return Problem(
                 title: "Unauthorized",
-                detail: "You do not have permission to update this task.",
-                statusCode: StatusCodes.Status403Forbidden);
+                detail: "Required user claims were not found.",
+                statusCode: StatusCodes.Status401Unauthorized);
         }
-        if (!await _taskCommandHandler.Handle(updateTaskCommand))
+
+        UpdateTaskCommand command = request.ToCommand(userId);
+        Result result = await _taskCommandHandler.Handle(command);
+        if (!result.IsSuccess)
         {
-            _logger.LogWarning("Task update failed for TaskId {TaskId} by UserId {UserId}. Error: {ErrorMessage}", taskId, userId, "Task does not exist or could not be updated.");
+            _logger.LogWarning("Task update failed for TaskId {TaskId} by UserId {UserId}. Error: {ErrorMessage}", taskId, userId, result.ErrorMessage);
+
+            if (result.ErrorMessage == "Task not found.")
+            {
+                return Problem(
+                    title: "Task not found",
+                    detail: result.ErrorMessage,
+                    statusCode: StatusCodes.Status404NotFound);
+            }
+
+            if (result.ErrorMessage == "You do not have permission to update this task.")
+            {
+                return Problem(
+                    title: "Unauthorized",
+                    detail: result.ErrorMessage,
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
 
             return Problem(
                 title: "Task update failed",
-                detail: "Task does not exist or could not be updated.",
+                detail: result.ErrorMessage,
                 statusCode: StatusCodes.Status400BadRequest);
         }
 

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using WorkTracker.Infrastructure.DependencyInjection;
 using WorkTracker.Infrastructure.Persistence;
@@ -6,6 +7,20 @@ using WorkTracker.Application.DependencyInjection;
 using WorkTracker.API.MiddleWare;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// When running behind a reverse proxy (ingress-nginx, docker, etc.) trust the
+// X-Forwarded-* headers so Request.IsHttps / Request.Scheme reflect the original
+// client request. Without this the auth cookie would never be flagged Secure
+// behind a TLS-terminating proxy, and secure-only cookies would be dropped.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Trust forwarded headers from any proxy in front of us (ingress / docker
+    // internal networks are not predictable). In a hardened setup you would
+    // restrict this to known proxy IP ranges.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Add services to the DI container.
 builder.Services.AddOpenApi();
@@ -62,14 +77,12 @@ if (args.Contains("--migrate"))
     return;
 }
 
+// Forwarded headers must run before any middleware that inspects the request
+// scheme/host (exception handler, CORS, auth cookie creation, etc.).
+app.UseForwardedHeaders();
+
 // Global exception handling middleware
 app.UseExceptionHandler();
-
-// Redirect http to https outside development to keep local SPA->API http flow simple.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
 
 if (corsOrigins.Length > 0)
 {

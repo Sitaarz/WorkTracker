@@ -80,12 +80,17 @@ public class TaskCommandHandler
         return Result<TaskItemDto>.Success(taskItemDto);
     }
 
-    public async Task<bool> Handle(UpdateTaskCommand command)
+    public async Task<Result> Handle(UpdateTaskCommand command)
     {
         var existingTask = await _taskRepository.GetTaskByIdAsync(command.Id);
         if (existingTask == null)
         {
-            return false;
+            return Result.Failure("Task not found.");
+        }
+
+        if (existingTask.OwnerId != command.UserId)
+        {
+            return Result.Failure("You do not have permission to update this task.");
         }
 
         existingTask.Title = command.Title.Trim();
@@ -94,13 +99,20 @@ public class TaskCommandHandler
         existingTask.Priority = command.Priority;
         existingTask.DueDate = command.DueDate;
 
-        return await _taskRepository.TryUpdateTaskAsync(existingTask);
+        var updated = await _taskRepository.TryUpdateTaskAsync(existingTask);
+        if (!updated)
+        {
+            return Result.Failure("Failed to update task.");
+        }
+
+        return Result.Success();
     }
 
     public async Task<Result> Handle(DeleteTaskCommand command)
     {
         var taskItem = await _taskRepository.GetTaskByIdAsync(command.TaskId);
-        if (taskItem == null)        {
+        if (taskItem == null)
+        {
             return Result.Failure("Task not found.");
         }
         if (taskItem.OwnerId != command.UserId)

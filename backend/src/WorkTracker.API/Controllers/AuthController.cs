@@ -15,13 +15,11 @@ namespace WorkTracker.API.Controllers
     {
         private readonly AuthHandler _authHandler;
         private readonly ILogger<AuthController> _logger;
-        private readonly IWebHostEnvironment _environment;
-        
-        public AuthController(IWebHostEnvironment environment, AuthHandler authHandler, ILogger<AuthController> logger)
+
+        public AuthController(AuthHandler authHandler, ILogger<AuthController> logger)
         {
             _authHandler = authHandler;
             _logger = logger;
-            _environment = environment;
         }
 
         [HttpPost("register")]
@@ -134,8 +132,8 @@ namespace WorkTracker.API.Controllers
             Response.Cookies.Append("access_token", string.Empty, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development",
-                SameSite = SameSiteMode.Strict,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(-1)
             });
 
@@ -144,11 +142,16 @@ namespace WorkTracker.API.Controllers
 
         private CookieOptions BuildAuthCookieOptions()
         {
+            // Secure must match the actual request scheme: a cookie with Secure=true
+            // is rejected by browsers on plain HTTP, which would log the user out on
+            // the very next request. When the API sits behind a TLS-terminating proxy
+            // (ingress, nginx, etc.) the forwarded headers middleware ensures
+            // Request.IsHttps reflects the original client scheme.
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = !_environment.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddHours(1)
             };
         }
