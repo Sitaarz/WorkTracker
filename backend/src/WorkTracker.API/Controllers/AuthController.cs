@@ -15,10 +15,13 @@ namespace WorkTracker.API.Controllers
     {
         private readonly AuthHandler _authHandler;
         private readonly ILogger<AuthController> _logger;
-        public AuthController(AuthHandler authHandler, ILogger<AuthController> logger)
+        private readonly IWebHostEnvironment _environment;
+        
+        public AuthController(IWebHostEnvironment environment, AuthHandler authHandler, ILogger<AuthController> logger)
         {
             _authHandler = authHandler;
             _logger = logger;
+            _environment = environment;
         }
 
         [HttpPost("register")]
@@ -144,7 +147,7 @@ namespace WorkTracker.API.Controllers
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development",
+                Secure = !_environment.IsDevelopment(),
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddHours(1)
             };

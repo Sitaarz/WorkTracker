@@ -141,7 +141,7 @@ public class TasksController : ControllerBase
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        return Ok();
+        return NoContent();
     }
 
     [HttpDelete("{taskId:guid}")]
