@@ -5,11 +5,10 @@ namespace WorkTracker.Application.Tasks.Update;
 
 public sealed record class UpdateTaskCommand(
     Guid Id,
+    Guid UserId,
     string Title,
     string Description,
     TaskStatusEnum Status,
     TaskPriorityEnum Priority,
-    DateTime? DueDate,
-    Guid OwnerId,
-    DateTime CreatedAt
+    DateTime? DueDate
 );

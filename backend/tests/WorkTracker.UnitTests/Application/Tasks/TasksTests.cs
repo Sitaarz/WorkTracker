@@ -218,13 +218,12 @@ public class TasksTests
         var ownerId = Guid.NewGuid();
         var command = new UpdateTaskCommand(
             Guid.NewGuid(),
+            ownerId,
             "Title",
             "Description",
             TaskItemStatus.InProgress,
             TaskPriority.Medium,
-            DateTime.UtcNow.AddDays(1),
-            ownerId,
-            DateTime.UtcNow);
+            DateTime.UtcNow.AddDays(1));
 
         _taskRepository.GetTaskByIdAsync(command.Id).Returns(ATask(ownerId));
         _taskRepository.TryUpdateTaskAsync(Arg.Any<TaskItem>()).Returns(true);
@@ -233,7 +232,8 @@ public class TasksTests
         var result = await _taskCommandHandler.Handle(command);
 
         // Assert
-        Assert.That(result, Is.True);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.ErrorMessage, Is.Null);
         await _taskRepository.Received(1).TryUpdateTaskAsync(Arg.Is<TaskItem>(task =>
             task.Title == "Title" &&
             task.Description == "Description" &&
@@ -243,25 +243,51 @@ public class TasksTests
     }
 
     [Test]
-    public async Task HandleUpdateTaskCommand_ShouldReturnFalse_WhenTaskNotFound()
+    public async Task HandleUpdateTaskCommand_ShouldReturnFailure_WhenTaskNotFound()
     {
         // Arrange
         var command = new UpdateTaskCommand(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             "Title",
             "Description",
             TaskItemStatus.InProgress,
             TaskPriority.Medium,
-            DateTime.UtcNow.AddDays(1),
-            Guid.NewGuid(),
-            DateTime.UtcNow);
+            DateTime.UtcNow.AddDays(1));
         _taskRepository.GetTaskByIdAsync(command.Id).ReturnsNull();
 
         // Act
         var result = await _taskCommandHandler.Handle(command);
 
         // Assert
-        Assert.That(result, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("Task not found."));
+        await _taskRepository.DidNotReceive().TryUpdateTaskAsync(Arg.Any<TaskItem>());
+    }
+
+    [Test]
+    public async Task HandleUpdateTaskCommand_ShouldReturnFailure_WhenUserDoesNotOwnTask()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var command = new UpdateTaskCommand(
+            Guid.NewGuid(),
+            otherUserId,
+            "Title",
+            "Description",
+            TaskItemStatus.InProgress,
+            TaskPriority.Medium,
+            DateTime.UtcNow.AddDays(1));
+
+        _taskRepository.GetTaskByIdAsync(command.Id).Returns(ATask(ownerId));
+
+        // Act
+        var result = await _taskCommandHandler.Handle(command);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("You do not have permission to update this task."));
         await _taskRepository.DidNotReceive().TryUpdateTaskAsync(Arg.Any<TaskItem>());
     }
 
@@ -272,13 +298,12 @@ public class TasksTests
         var ownerId = Guid.NewGuid();
         var command = new UpdateTaskCommand(
             Guid.NewGuid(),
+            ownerId,
             "  Trimmed Title  ",
             "  Trimmed Description  ",
             TaskItemStatus.InProgress,
             TaskPriority.Medium,
-            DateTime.UtcNow.AddDays(1),
-            ownerId,
-            DateTime.UtcNow);
+            DateTime.UtcNow.AddDays(1));
 
         _taskRepository.GetTaskByIdAsync(command.Id).Returns(
             ATask(ownerId, title: "Old title", description: "Old description",
@@ -289,26 +314,25 @@ public class TasksTests
         var result = await _taskCommandHandler.Handle(command);
 
         // Assert
-        Assert.That(result, Is.True);
+        Assert.That(result.IsSuccess, Is.True);
         await _taskRepository.Received(1).TryUpdateTaskAsync(Arg.Is<TaskItem>(task =>
             task.Title == "Trimmed Title" &&
             task.Description == "Trimmed Description"));
     }
 
     [Test]
-    public async Task HandleUpdateTaskCommand_ShouldReturnFalse_WhenRepositoryUpdateFails()
+    public async Task HandleUpdateTaskCommand_ShouldReturnFailure_WhenRepositoryUpdateFails()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
         var command = new UpdateTaskCommand(
             Guid.NewGuid(),
+            ownerId,
             "Title",
             "Description",
             TaskItemStatus.InProgress,
             TaskPriority.Medium,
-            DateTime.UtcNow.AddDays(1),
-            ownerId,
-            DateTime.UtcNow);
+            DateTime.UtcNow.AddDays(1));
 
         _taskRepository.GetTaskByIdAsync(command.Id).Returns(ATask(ownerId));
         _taskRepository.TryUpdateTaskAsync(Arg.Any<TaskItem>()).Returns(false);
@@ -317,7 +341,8 @@ public class TasksTests
         var result = await _taskCommandHandler.Handle(command);
 
         // Assert
-        Assert.That(result, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("Failed to update task."));
     }
 
     [Test]

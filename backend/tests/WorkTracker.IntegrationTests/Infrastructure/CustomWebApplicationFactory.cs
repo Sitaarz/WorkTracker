@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using WorkTracker.API;
 
 namespace WorkTracker.IntegrationTests.Infrastructure;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<IApiMarker>
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
 
