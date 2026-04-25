@@ -13,19 +13,6 @@ data:
   Cors__AllowedOrigins__0: "https://worktracker.example.com"
 ---
 apiVersion: v1
-kind: Secret
-metadata:
-  name: worktracker-secrets
-  namespace: worktracker
-type: Opaque
-stringData:
-  # Host must match the Postgres Service name in namespace `worktracker`.
-  # Username/Password MUST stay in sync with postgres-config / postgres-auth below.
-  ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=worktracker;Username=worktracker;Password=REPLACE_ME_STRONG_DB_PASSWORD"
-  # HMAC signing key - must be at least 32 characters. Replace before deploying.
-  Jwt__SecretKey: "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS"
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
@@ -33,13 +20,6 @@ metadata:
 data:
   POSTGRES_DB: "worktracker"
   POSTGRES_USER: "worktracker"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: postgres-auth
-  namespace: worktracker
-type: Opaque
-stringData:
-  # Must match the Password in worktracker-secrets.ConnectionStrings__DefaultConnection.
-  POSTGRES_PASSWORD: "REPLACE_ME_STRONG_DB_PASSWORD"
+# Secret-y `worktracker-secrets` i `postgres-auth` są tworzone przez
+# pipeline (.github/workflows/deploy.yml) z wartości w GitHub Actions
+# (secrets.DB_PASSWORD, secrets.JWT_SECRET). Nie trzymamy ich w repo.
