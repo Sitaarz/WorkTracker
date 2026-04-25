@@ -15,8 +15,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_API: ghcr.io/${{ github.repository_owner }}/worktracker-api
-  IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/worktracker-web
 
 jobs:
   deploy:
@@ -24,9 +22,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute tag
-        id: tag
-        run: echo "value=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Compute image names and tag
+        id: meta
+        run: |
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          TAG="sha-${GITHUB_SHA::7}"
+          {
+            echo "IMAGE_API=ghcr.io/${OWNER_LC}/worktracker-api"
+            echo "IMAGE_WEB=ghcr.io/${OWNER_LC}/worktracker-web"
+            echo "TAG=${TAG}"
+          } >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -45,7 +50,7 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_API }}:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_API }}:${{ env.TAG }}
             ${{ env.IMAGE_API }}:latest
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
@@ -57,7 +62,7 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_WEB }}:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_WEB }}:${{ env.TAG }}
             ${{ env.IMAGE_WEB }}:latest
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
@@ -83,7 +88,6 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          TAG: ${{ steps.tag.outputs.value }}
         run: |
           : "${DB_PASSWORD:?DB_PASSWORD secret is not set}"
           : "${JWT_SECRET:?JWT_SECRET secret is not set}"
