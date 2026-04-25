@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: worktracker
+
+resources:
+  - 00-namespace.yml
+  - 10-config.yml
+  - 20-postgres.yml
+  - 30-migrate-job.yml
+  - 40-api.yml
+  - 50-web.yml
+  - 60-ingress.yml
+
+# Pipeline nadpisuje `newName` i `newTag` komendą:
+#   kustomize edit set image worktracker-api=<acr>.azurecr.io/worktracker-api:sha-abc1234
+#   kustomize edit set image worktracker-web=<acr>.azurecr.io/worktracker-web:sha-abc1234
+images:
+  - name: worktracker-api
+    newName: REGISTRY.azurecr.io/worktracker-api
+    newTag: dev
+  - name: worktracker-web
+    newName: REGISTRY.azurecr.io/worktracker-web
+    newTag: dev
