@@ -1,4 +1,4 @@
-name: Build and deploy to Azure Kubernetes Service
+name: Build and deploy
 
 on:
   push:
@@ -11,87 +11,56 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_API: ghcr.io/${{ github.repository_owner }}/worktracker-api
+  IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/worktracker-web
 
 jobs:
-  build:
-    name: Build & push images to ACR
+  deploy:
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.meta.outputs.tag }}
-      image-api: ${{ steps.meta.outputs.image-api }}
-      image-web: ${{ steps.meta.outputs.image-web }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute image metadata
-        id: meta
-        run: |
-          REGISTRY="${{ vars.ACR_NAME }}.azurecr.io"
-          TAG="sha-${GITHUB_SHA::7}"
-          {
-            echo "tag=${TAG}"
-            echo "image-api=${REGISTRY}/worktracker-api"
-            echo "image-web=${REGISTRY}/worktracker-web"
-          } >> "$GITHUB_OUTPUT"
+      - name: Compute tag
+        id: tag
+        run: echo "value=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Log in to ACR
-        run: az acr login --name ${{ vars.ACR_NAME }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push API image
+      - name: Build & push API image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ steps.meta.outputs.image-api }}:${{ steps.meta.outputs.tag }}
-            ${{ steps.meta.outputs.image-api }}:latest
+            ${{ env.IMAGE_API }}:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_API }}:latest
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
-      - name: Build and push Web image
+      - name: Build & push Web image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ${{ steps.meta.outputs.image-web }}:${{ steps.meta.outputs.tag }}
-            ${{ steps.meta.outputs.image-web }}:latest
+            ${{ env.IMAGE_WEB }}:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_WEB }}:latest
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
-
-  deploy:
-    name: Deploy to AKS
-    needs: build
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Set AKS context
-        uses: azure/aks-set-context@v4
-        with:
-          resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
-          cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
@@ -99,18 +68,28 @@ jobs:
       - name: Set up kustomize
         uses: imranismail/setup-kustomize@v2
 
-      - name: Ensure namespace exists
+      - name: Write kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         run: |
-          kubectl create namespace worktracker \
-            --dry-run=client -o yaml | kubectl apply -f -
+          : "${KUBE_CONFIG:?KUBE_CONFIG secret is not set}"
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+          kubectl cluster-info
 
-      - name: Apply application secrets
+      - name: Apply manifests
+        working-directory: k8s
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          TAG: ${{ steps.tag.outputs.value }}
         run: |
-          : "${DB_PASSWORD:?DB_PASSWORD secret is not set in GitHub Actions}"
-          : "${JWT_SECRET:?JWT_SECRET secret is not set in GitHub Actions}"
+          : "${DB_PASSWORD:?DB_PASSWORD secret is not set}"
+          : "${JWT_SECRET:?JWT_SECRET secret is not set}"
+
+          kubectl create namespace worktracker \
+            --dry-run=client -o yaml | kubectl apply -f -
 
           CONN="Host=postgres;Port=5432;Database=worktracker;Username=worktracker;Password=${DB_PASSWORD}"
 
@@ -123,25 +102,10 @@ jobs:
             --from-literal=POSTGRES_PASSWORD="${DB_PASSWORD}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Pin image tags in kustomization
-        working-directory: k8s
-        run: |
-          kustomize edit set image \
-            worktracker-api=${{ needs.build.outputs.image-api }}:${{ needs.build.outputs.tag }}
-          kustomize edit set image \
-            worktracker-web=${{ needs.build.outputs.image-web }}:${{ needs.build.outputs.tag }}
+          kustomize edit set image "worktracker-api=${IMAGE_API}:${TAG}"
+          kustomize edit set image "worktracker-web=${IMAGE_WEB}:${TAG}"
 
-      - name: Bake manifests
-        id: bake
-        uses: azure/k8s-bake@v3
-        with:
-          renderEngine: kustomize
-          kustomizationPath: k8s
+          kubectl apply -k .
 
-      - name: Deploy to AKS
-        uses: azure/k8s-deploy@v5
-        with:
-          manifests: ${{ steps.bake.outputs.manifestsBundle }}
-          images: |
-            ${{ needs.build.outputs.image-api }}:${{ needs.build.outputs.tag }}
-            ${{ needs.build.outputs.image-web }}:${{ needs.build.outputs.tag }}
+          kubectl -n worktracker rollout status deploy/worktracker-api --timeout=3m
+          kubectl -n worktracker rollout status deploy/worktracker-web --timeout=3m
