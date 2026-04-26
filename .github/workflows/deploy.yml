@@ -87,8 +87,31 @@ jobs:
         working-directory: k8s
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
+          dump_diagnostics() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "::group::Kubernetes diagnostics"
+              kubectl -n worktracker get deploy,rs,job,pods -o wide || true
+              kubectl -n worktracker describe deploy/worktracker-api || true
+              kubectl -n worktracker describe deploy/worktracker-web || true
+              kubectl -n worktracker describe pods -l app=worktracker-api || true
+              kubectl -n worktracker describe pods -l app=worktracker-web || true
+              kubectl -n worktracker logs -l app=worktracker-api --all-containers --tail=120 || true
+              kubectl -n worktracker logs -l app=worktracker-web --all-containers --tail=120 || true
+              kubectl -n worktracker describe job/worktracker-migrate || true
+              kubectl -n worktracker logs job/worktracker-migrate --all-containers --tail=120 || true
+              kubectl -n worktracker get events --sort-by=.lastTimestamp | tail -80 || true
+              echo "::endgroup::"
+            fi
+            exit "$status"
+          }
+          trap dump_diagnostics EXIT
+
           : "${DB_PASSWORD:?DB_PASSWORD secret is not set}"
           : "${JWT_SECRET:?JWT_SECRET secret is not set}"
 
@@ -106,10 +129,23 @@ jobs:
             --from-literal=POSTGRES_PASSWORD="${DB_PASSWORD}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
+          if [ -z "${GHCR_READ_TOKEN}" ]; then
+            echo "::warning::GHCR_READ_TOKEN is not set; using GITHUB_TOKEN for this deployment. For private GHCR packages, create a long-lived token with read:packages and save it as GHCR_READ_TOKEN."
+            GHCR_READ_TOKEN="${GITHUB_TOKEN}"
+          fi
+
+          kubectl -n worktracker create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username="${GHCR_USER}" \
+            --docker-password="${GHCR_READ_TOKEN}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
           kustomize edit set image "worktracker-api=${IMAGE_API}:${TAG}"
           kustomize edit set image "worktracker-web=${IMAGE_WEB}:${TAG}"
 
+          kubectl -n worktracker delete job worktracker-migrate --ignore-not-found
           kubectl apply -k .
 
-          kubectl -n worktracker rollout status deploy/worktracker-api --timeout=3m
-          kubectl -n worktracker rollout status deploy/worktracker-web --timeout=3m
+          kubectl -n worktracker wait --for=condition=complete job/worktracker-migrate --timeout=5m
+          kubectl -n worktracker rollout status deploy/worktracker-api --timeout=5m
+          kubectl -n worktracker rollout status deploy/worktracker-web --timeout=5m

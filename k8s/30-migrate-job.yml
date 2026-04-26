@@ -9,6 +9,8 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      imagePullSecrets:
+        - name: ghcr-pull
       initContainers:
         - name: wait-for-postgres
           image: postgres:16.4-alpine

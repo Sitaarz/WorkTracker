@@ -16,6 +16,8 @@ spec:
       labels:
         app: worktracker-api
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: api
           image: worktracker-api:dev
