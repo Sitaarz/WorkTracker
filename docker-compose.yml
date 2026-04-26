@@ -27,6 +27,10 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    networks:
+      default:
+        aliases:
+          - worktracker-api
     environment:
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=worktracker;Username=postgres;Password=postgres
       Jwt__SecretKey: dev-secret-change-me-1234567890123123
