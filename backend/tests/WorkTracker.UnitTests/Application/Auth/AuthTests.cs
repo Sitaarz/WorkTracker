@@ -93,6 +93,33 @@ public class AuthTests
 
         await _userRepository.Received(1).GetUserByEmailAsync(normalizedEmail);
     }
+
+    [Test]
+    public async Task RegisterAsync_ShouldNotCreateUser_WhenTokenGenerationFails()
+    {
+        // Arrange
+        const string email = "test.name@example.com";
+        const string passwordHash = "hashed-password";
+        var command = new RegisterUserCommand(
+            Name: "TestName",
+            Email: email,
+            Password: "TestPassword123!"
+        );
+        _userRepository.GetUserByEmailAsync(email).Returns((User?)null);
+        _passwordHasher.HashPassword(Arg.Any<User>(), command.Password).Returns(passwordHash);
+        _jwtGenerator
+            .GenerateToken(Arg.Any<User>())
+            .Returns(_ => throw new ArgumentException("JWT configuration is invalid."));
+
+        // Act
+        var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _authHandler.RegisterAsync(command));
+
+        // Assert
+        Assert.That(exception, Is.Not.Null);
+        Assert.That(exception!.Message, Is.EqualTo("JWT configuration is invalid."));
+        await _userRepository.DidNotReceive().CreateUserAsync(Arg.Any<User>());
+    }
+
     [Test]
     public async Task RegisterAsync_ShouldReturnError_WhenUserExists()
     {

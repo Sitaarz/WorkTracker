@@ -43,9 +43,9 @@ public class AuthHandler
         };
 
         user.PasswordHash = _passwordHasher.HashPassword(user, command.Password);
+        var token = _jwtGenerator.GenerateToken(user);
         await _userRepository.CreateUserAsync(user);
 
-        var token = _jwtGenerator.GenerateToken(user);
         return Result<AuthResponse>.Success(new AuthResponse(user.Id, user.Name, user.Email, user.Role, token));
     }
 
