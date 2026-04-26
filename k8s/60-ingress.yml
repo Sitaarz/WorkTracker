@@ -16,6 +16,20 @@ spec:
     - host: krystian-sitarz.pl
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-api
+                port:
+                  number: 80
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-api
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
@@ -26,6 +40,20 @@ spec:
     - host: www.krystian-sitarz.pl
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-api
+                port:
+                  number: 80
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: worktracker-api
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
