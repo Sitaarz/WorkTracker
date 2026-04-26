@@ -6,6 +6,7 @@ namespace: worktracker
 resources:
   - 00-namespace.yml
   - 10-config.yml
+  - 15-issuer.yml
   - 20-postgres.yml
   - 30-migrate-job.yml
   - 40-api.yml

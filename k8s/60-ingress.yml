@@ -4,6 +4,7 @@ metadata:
   name: worktracker
   namespace: worktracker
   annotations:
+    cert-manager.io/issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   ingressClassName: nginx

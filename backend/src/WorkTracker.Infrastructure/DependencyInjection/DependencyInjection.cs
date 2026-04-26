@@ -23,7 +23,17 @@ public static class DependencyInjection
 
         services.AddDbContext<WorkTrackerDbContext>(options =>options.UseNpgsql(connectionString));
 
-        services.Configure<JwtOptions>(jwtSection);
+        services
+            .AddOptions<JwtOptions>()
+            .Bind(jwtSection)
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Issuer), "Jwt:Issuer is required.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Audience), "Jwt:Audience is required.")
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.SecretKey)
+                    && Encoding.UTF8.GetByteCount(options.SecretKey) >= 32,
+                "Jwt:SecretKey must be at least 32 UTF-8 bytes for HS256 signing.")
+            .Validate(options => options.ExpirationMinutes > 0, "Jwt:ExpirationMinutes must be greater than 0.")
+            .ValidateOnStart();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
