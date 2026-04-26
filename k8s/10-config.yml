@@ -17,6 +17,6 @@ metadata:
 data:
   POSTGRES_DB: "worktracker"
   POSTGRES_USER: "worktracker"
-# Secret-y `worktracker-secrets` i `postgres-auth` są tworzone przez
-# pipeline (.github/workflows/deploy.yml) z wartości w GitHub Actions
-# (secrets.DB_PASSWORD, secrets.JWT_SECRET). Nie trzymamy ich w repo.
+# The `worktracker-secrets` and `postgres-auth` secrets are created by the
+# pipeline (.github/workflows/deploy.yml) from GitHub Actions values
+# (secrets.DB_PASSWORD, secrets.JWT_SECRET). They are not stored in the repo.

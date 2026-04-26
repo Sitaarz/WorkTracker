@@ -1,70 +1,71 @@
 # MVP document for the project
 
 ## Goal
-The goal of the project is creating application for menaging work utilizing canban table.
+The goal of the project is to create an application for managing work with a
+Kanban-style board.
 
 ## Problem
-The project resolves problem with work management.
+The project addresses the problem of organizing and tracking work.
 
 ## Target user
-The target user is the person who wants to manage one's work by dashboard with tasks.
+The target user is a person who wants to manage work through a task dashboard.
 
 ## MVP
-- adding tasks
-- deleting tasks
-- editing tasks
-- registering
-- log in
-- viewing tasks
+- Add tasks
+- Delete tasks
+- Edit tasks
+- Register
+- Log in
+- View tasks
 
 
 ## MoSCoW
 Must have:
-- adding tasks
-- deleting tasks
-- editing tasks
-- registering
-- log in
-- viewing tasks
+- Add tasks
+- Delete tasks
+- Edit tasks
+- Register
+- Log in
+- View tasks
 
 Should have:
-- labels
+- Labels
 
 Could have:
-- sorting
-- filtering
-- notification
-- comments
-- due dates
-- drag-and-drop
+- Sorting
+- Filtering
+- Notifications
+- Comments
+- Due dates
+- Drag-and-drop
 
 Will not have:
-- team-collaboration
-- advanced-reporting
-- mobile app
+- Team collaboration
+- Advanced reporting
+- Mobile app
 
 
 ## User stories
-- As a user I want to log in
-- As a user I want to register
-- As a user I want to add tasks
-- As a user I want to remove tasks
-- As a user I want to modify tasks
-- As a user I want to view my tasks
+- As a user, I want to log in.
+- As a user, I want to register.
+- As a user, I want to add tasks.
+- As a user, I want to remove tasks.
+- As a user, I want to modify tasks.
+- As a user, I want to view my tasks.
 
 ## Functional requirements
-- The system should allow to log in with email and password
-- The system should allow to register user with email and password
-- The system should allow to add task with title and description
-- The system should allow to remove tasks by clicking on the remove button on task pop up
-- the system should allow to modify task by clicking modify button on the task pop up
-- the system should allow to view task by list of tasks and by pop up after clicking on the task
+- The system should allow users to log in with an email address and password.
+- The system should allow users to register with an email address and password.
+- The system should allow users to add tasks with a title and description.
+- The system should allow users to remove tasks from the task details popup.
+- The system should allow users to modify tasks from the task details popup.
+- The system should allow users to view tasks in a task list and in a task details popup.
 
 ## Nonfunctional requirements
-### Efficency
-- The task should be added under 1 sec
-- The user should be logged in under 1 sec
+### Efficiency
+- A task should be added within 1 second.
+- A user should be logged in within 1 second.
 ### Security
-- The user should be allowed to allowed to manage only user's account
+- Users should be allowed to manage only their own account and tasks.
 ### Audit
-- Errors should be displayed by logs
+- Errors should be recorded in logs.

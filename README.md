@@ -92,6 +92,16 @@ WorkTracker/
 |   |-- nginx.conf
 |   `-- package.json
 |-- docs/
+|   |-- README.md                      # Documentation index
+|   |-- architecture.md                 # Application architecture and flows
+|   |-- api.md                          # REST API reference
+|   |-- configuration.md                # Environment and secret configuration
+|   |-- database.md                     # Database model and EF Core migrations
+|   |-- deployment.md                   # Docker, Kubernetes, GitHub Actions deployment
+|   |-- local-development.md            # Local setup and troubleshooting
+|   |-- testing.md                      # Backend/frontend test commands
+|   |-- decisions.md                    # Lightweight architecture decision log
+|   |-- kubernetes-data-flow.md         # Kubernetes data-flow diagram
 |   `-- mvp.md
 |-- k8s/                                # Namespace, config, Postgres, migrate job, API/web, ingress
 |-- .github/

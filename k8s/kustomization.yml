@@ -13,7 +13,7 @@ resources:
   - 50-web.yml
   - 60-ingress.yml
 
-# Pipeline nadpisuje `newName` i `newTag` komendą:
+# The pipeline overwrites `newName` and `newTag` with:
 #   kustomize edit set image worktracker-api=<acr>.azurecr.io/worktracker-api:sha-abc1234
 #   kustomize edit set image worktracker-web=<acr>.azurecr.io/worktracker-web:sha-abc1234
 images:
