@@ -2,7 +2,9 @@
 
 WorkTracker is a personal task management application for authenticated users. It combines a .NET 10 REST API, an Angular 21 single-page app, and PostgreSQL persistence.
 
-The current product is a list/form-based task tracker with task statuses, priorities, due dates, filtering, sorting, and pagination. Drag-and-drop Kanban is not implemented yet.
+The current product is a list/form-based task tracker with task statuses, priorities, due dates, filtering, sorting, and pagination.  
+
+App deployed under the link: krystian-sitarz.pl
 
 ## Contents
 
